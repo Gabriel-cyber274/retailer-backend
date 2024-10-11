@@ -27,7 +27,9 @@ class User extends Authenticatable
         'city',
         'state',
         'verification_code',
-        'admin'
+        'admin',
+        'shop_name',
+        'shop_id'
     ];
 
 
@@ -55,4 +57,32 @@ class User extends Authenticatable
             'admin' => 'bool'
         ];
     }
+
+
+    public function retails()
+    {
+        return $this->hasMany(retailProduct::class, 'user_id');
+    }
+
+
+    public function customers()
+    {
+        return $this->hasMany(Customer::class, 'user_id');
+    }
+
+
+    public function deposits()
+    {
+        return $this->hasMany(Deposit::class, 'user_id');
+    }
+
+
+
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class, 'user_id');
+    }
+
+    
 }

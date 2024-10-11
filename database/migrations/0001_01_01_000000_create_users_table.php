@@ -24,6 +24,8 @@ return new class extends Migration
             $table->string('state')->nullable();
             $table->boolean('admin')->default(false);
             $table->string('verification_code')->nullable();
+            $table->string('shop_name')->nullable();
+            $table->string('shop_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

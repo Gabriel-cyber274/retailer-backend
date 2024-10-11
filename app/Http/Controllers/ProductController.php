@@ -19,7 +19,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::with(['tags'])->orderBy('id', 'desc')->get();
+        $products = Product::with(['tags', 'categories'])->orderBy('id', 'desc')->get();
 
         $response = [
             'products' => $products,
@@ -94,7 +94,7 @@ class ProductController extends Controller
     public function show($id)
     {
         try {
-            $product = Product::with(['tags'])->findorfail($id);
+            $product = Product::with(['tags', 'categories'])->findorfail($id);
 
             return response([
                 'message' => 'product retrieved successfully',

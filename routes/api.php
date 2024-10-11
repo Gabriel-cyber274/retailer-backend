@@ -1,7 +1,12 @@
 <?php
 
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\DepositController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductTagsController;
+use App\Http\Controllers\RetailProductController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -61,6 +66,106 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/tags/{id}', [ProductTagsController::class, 'update']);
     Route::delete('/tags/{id}', [ProductTagsController::class, 'destroy']);
 
+
+
+    Route::get('/customers', [CustomerController::class, 'index']);
+    Route::post('/customers', [CustomerController::class, 'store']);
+    Route::get('/customers/{id}', [CustomerController::class, 'show']);
+    Route::post('/customers/{id}', [CustomerController::class, 'update']);
+    Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
+
+
+
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::get('/categories/{id}', [CategoryController::class, 'show']);
+    Route::post('/categories/{id}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    Route::post('/categories-attachproducts/{id}', [CategoryController::class, 'attachProductToCategory']);
+    Route::post('/categories-detachproducts/{id}', [CategoryController::class, 'detachProductFromCategory']);
+    Route::post('/categories-attachRetailProducts/{id}', [CategoryController::class, 'attachRetailProductToCategory']);
+    Route::post('/categories-detachRetailProducts/{id}', [CategoryController::class, 'detachRetailProductToCategory']);
+    Route::get('/myretail-categories', [CategoryController::class, 'getMyCategoryWithRetailProduct']);
+    Route::get('/myretail-categories/{catId}', [CategoryController::class, 'getSingleCategoryRetailProducts']);
+
+
+
+
+
+
+
+
+    Route::post('/activate-shop', [UserController::class, 'activateShop']);
+    Route::post('/deactivate-shop', [UserController::class, 'deactivateShop']);
+
+
+
+    Route::get('/retails', [RetailProductController::class, 'index']);
+    Route::post('/retails', [RetailProductController::class, 'store']);
+    Route::get('/retails/{id}', [RetailProductController::class, 'show']);
+    Route::post('/retails/{id}', [RetailProductController::class, 'update']);
+    Route::delete('/retails/{id}', [RetailProductController::class, 'destroy']);
+
+
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders-allPending', [OrderController::class, 'allPending']);
+    Route::get('/orders-allCompleted', [OrderController::class, 'allCompleted']);
+    Route::get('/orders-allCancelled', [OrderController::class, 'allCancelled']);
+
+    Route::get('/orders-all', [OrderController::class, 'all']);
+    Route::get('/orders-allMonthly', [OrderController::class, 'getMonthlyOrders']);
+    Route::get('/orders-allYearly', [OrderController::class, 'getYearlyOrders']);
+    Route::get('/orders-allDaily', [OrderController::class, 'getDailyOrders']);
+    Route::get('/orders-allWeekly', [OrderController::class, 'getWeeklyOrders']);
+    Route::get('/orders-allcreatedMonthly', [OrderController::class, 'ordersCreatedMonthly']);
+
+
+    Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/orders/{id}', [OrderController::class, 'show']);
+    Route::post('/orders/{id}', [OrderController::class, 'update']);
+    Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
+
+
+
+
+    Route::get('/deposits', [DepositController::class, 'index']);
+    Route::get('/deposits-all', [DepositController::class, 'all']);
+    Route::get('/deposits-allYear', [DepositController::class, 'allThisYear']);
+    Route::get('/deposits-allMonth', [DepositController::class, 'allThisMonth']);
+    Route::get('/deposits-allWeek', [DepositController::class, 'allThisWeek']);
+    Route::get('/deposits-allToday', [DepositController::class, 'allToday']);
+
+    Route::get('/deposits-allPending', [DepositController::class, 'getAllPending']);
+    Route::get('/deposits-allCompleted', [DepositController::class, 'getAllCompleted']);
+    Route::get('/deposits-allCancelled', [DepositController::class, 'getAllCancelled']);
+
+    Route::get('/deposits-allCreatedMonthly', [DepositController::class, 'depositsCreatedMonthly']);
+
+
+
+    Route::post('/deposits', [DepositController::class, 'store']);
+    Route::get('/deposits/{id}', [DepositController::class, 'show']);
+    Route::post('/deposits/{id}', [DepositController::class, 'update']);
+    Route::delete('/deposits/{id}', [DepositController::class, 'destroy']);
+
+
+
+
+
+
+    Route::get('users/all-time', [UserController::class, 'allTimeUsers']);
+
+    Route::get('users/top-reseller', [UserController::class, 'topResellers']);
+
+    Route::get('users/this-year', [UserController::class, 'usersThisYear']);
+
+    Route::get('users/this-month', [UserController::class, 'usersThisMonth']);
+
+    Route::get('users/this-week', [UserController::class, 'usersThisWeek']);
+
+    Route::get('users/today', [UserController::class, 'usersToday']);
+
+    Route::get('users/monthly-onboarding', [UserController::class, 'usersOnboardedMonthly']);
 
 
 
