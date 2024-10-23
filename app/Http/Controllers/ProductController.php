@@ -19,7 +19,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::with(['tags', 'categories'])->orderBy('id', 'desc')->get();
+        $products = Product::with(['tags', 'categories', 'featuredimages'])->orderBy('id', 'desc')->get();
 
         $response = [
             'products' => $products,
@@ -70,7 +70,9 @@ class ProductController extends Controller
             'product_image' => $imageUrl,
             'description' => $request->description,
             'price' => $request->price,
-            'suggested_profit' => $request->suggested_profit
+            'suggested_profit' => $request->suggested_profit,
+            'brand_name' => $request->brand_name,
+            'video_url' => $request->video_url,
         ]);
 
 
@@ -94,7 +96,7 @@ class ProductController extends Controller
     public function show($id)
     {
         try {
-            $product = Product::with(['tags', 'categories'])->findorfail($id);
+            $product = Product::with(['tags', 'categories', 'featuredimages'])->findorfail($id);
 
             return response([
                 'message' => 'product retrieved successfully',

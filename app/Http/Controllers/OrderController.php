@@ -221,7 +221,7 @@ class OrderController extends Controller
                 $deposit_amount = Deposit::where('user_id', $userId)->where('status', 'pending')->sum('amount');
                 $acc_bal = $user->acc_balance;
 
-                $order_balance = $acc_bal - $deposit_amount;
+                $order_balance = ($acc_bal == $deposit_amount) ? $deposit_amount :  $acc_bal - $deposit_amount;
 
                 if ($order_balance < $request->amount) {
                     DB::rollBack();

@@ -16,8 +16,11 @@ class Product extends Model
         'price',
         'product_code',
         'suggested_profit',
+        'brand_name',
+        'video_url',
         'default_tag'
     ];
+
 
 
     public function tags()
@@ -35,6 +38,12 @@ class Product extends Model
     public function retails()
     {
         return $this->hasMany(retailProduct::class, 'product_id');
+    }
+
+
+    public function featuredimages()
+    {
+        return $this->hasMany(ProductFeatureImages::class, 'product_id');
     }
 
 

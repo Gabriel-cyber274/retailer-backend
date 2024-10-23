@@ -5,6 +5,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductFeatureImagesController;
 use App\Http\Controllers\ProductTagsController;
 use App\Http\Controllers\RetailProductController;
 use App\Http\Controllers\UserController;
@@ -73,6 +74,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/customers/{id}', [CustomerController::class, 'show']);
     Route::post('/customers/{id}', [CustomerController::class, 'update']);
     Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
+
+
+    Route::get('/product-featured-images/{productId}', [ProductFeatureImagesController::class, 'index']);
+    Route::post('/product-featured-images', [ProductFeatureImagesController::class, 'store']);
+    Route::get('/product-featured-images/show/{id}', [ProductFeatureImagesController::class, 'show']);
+    Route::post('/product-featured-images/{id}', [ProductFeatureImagesController::class, 'update']);
+    Route::delete('/product-featured-images/{id}', [ProductFeatureImagesController::class, 'destroy']);
 
 
 
