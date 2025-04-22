@@ -54,6 +54,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
     Route::get('/products', [ProductController::class, 'index']);
+
+    Route::get('/products-instock', [ProductController::class, 'allInstock']);
+    Route::get('/products-outofstock', [ProductController::class, 'allOutOfStock']);
+
     Route::post('/products', [ProductController::class, 'store']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::post('/products/{id}', [ProductController::class, 'update']);
@@ -63,6 +67,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     Route::get('/tags', [ProductTagsController::class, 'index']);
     Route::post('/tags', [ProductTagsController::class, 'store']);
+    Route::post('/tags-multiple', [ProductTagsController::class, 'storeMultiple']);
+
     Route::get('/tags/{id}', [ProductTagsController::class, 'show']);
     Route::post('/tags/{id}', [ProductTagsController::class, 'update']);
     Route::delete('/tags/{id}', [ProductTagsController::class, 'destroy']);
@@ -90,6 +96,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/categories/{id}', [CategoryController::class, 'update']);
     Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
     Route::post('/categories-attachproducts/{id}', [CategoryController::class, 'attachProductToCategory']);
+    Route::post('/products-attachcategories/{id}', [CategoryController::class, 'attachCategoryToProduct']);
+
+
     Route::post('/categories-detachproducts/{id}', [CategoryController::class, 'detachProductFromCategory']);
     Route::post('/categories-attachRetailProducts/{id}', [CategoryController::class, 'attachRetailProductToCategory']);
     Route::post('/categories-detachRetailProducts/{id}', [CategoryController::class, 'detachRetailProductToCategory']);
@@ -119,6 +128,14 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/orders-allPending', [OrderController::class, 'allPending']);
     Route::get('/orders-allCompleted', [OrderController::class, 'allCompleted']);
     Route::get('/orders-allCancelled', [OrderController::class, 'allCancelled']);
+
+
+    Route::get('/amountmade-alltime', [OrderController::class, 'getMoneyMadeAllTime']);
+    Route::get('/amountmade-monthly', [OrderController::class, 'getMoneyMonthly']);
+    Route::get('/amountmade-weekly', [OrderController::class, 'getMoneyWeekly']);
+    Route::get('/amountmade-daily', [OrderController::class, 'getMoneyDaily']);
+
+
 
     Route::get('/orders-all', [OrderController::class, 'all']);
     Route::get('/orders-allMonthly', [OrderController::class, 'getMonthlyOrders']);

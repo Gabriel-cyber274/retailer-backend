@@ -30,6 +30,33 @@ class ProductController extends Controller
         return response($response);
     }
 
+    public function allInstock()
+    {
+        $products = Product::with(['tags', 'categories', 'featuredimages'])->where('in_stock', true)->orderBy('id', 'desc')->get();
+
+        $response = [
+            'products' => $products,
+            'message' => 'products retrieved successfully',
+            'success' => true
+        ];
+
+        return response($response);
+    }
+
+    public function allOutOfStock()
+    {
+        $products = Product::with(['tags', 'categories', 'featuredimages'])->where('in_stock', false)->orderBy('id', 'desc')->get();
+
+        $response = [
+            'products' => $products,
+            'message' => 'products retrieved successfully',
+            'success' => true
+        ];
+
+        return response($response);
+    }
+
+
 
 
     public function store(Request $request)
@@ -38,8 +65,10 @@ class ProductController extends Controller
             'name' => 'required|string',
             'description' => 'required',
             'price' => 'required',
-            'suggested_profit' => 'required',
             'product_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'in_stock' => 'required',
+            'quantity' => 'nullable',
+            'cost_price' => 'required',
         ]);
 
 
@@ -70,9 +99,12 @@ class ProductController extends Controller
             'product_image' => $imageUrl,
             'description' => $request->description,
             'price' => $request->price,
-            'suggested_profit' => $request->suggested_profit,
+            'suggested_profit' => $request->price * 20 / 100,
             'brand_name' => $request->brand_name,
             'video_url' => $request->video_url,
+            'in_stock' => $request->in_stock,
+            'quantity' => $request->quantity,
+            'cost_price' => $request->cost_price,
         ]);
 
 

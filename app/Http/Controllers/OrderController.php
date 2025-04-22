@@ -49,6 +49,69 @@ class OrderController extends Controller
 
 
 
+    public function getMoneyMadeAllTime()
+    {
+        $totalAmount = Order::where('status', 'completed')->sum('amount');
+
+        return response()->json([
+            'amount' => $totalAmount,
+            'message' => 'Order retrieved successfully',
+            'success' => true,
+        ]);
+    }
+
+    public function getMoneyMonthly()
+    {
+        $startOfMonth = now()->startOfMonth();
+        $endOfMonth = now()->endOfMonth();
+
+        $totalAmount = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->sum('amount');
+
+        return response()->json([
+            'amount' => $totalAmount,
+            'message' => 'Monthly total retrieved successfully',
+            'success' => true,
+        ]);
+    }
+
+    public function getMoneyWeekly()
+    {
+        $startOfWeek = now()->startOfWeek();
+        $endOfWeek = now()->endOfWeek();
+
+        $totalAmount = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
+            ->sum('amount');
+
+        return response()->json([
+            'amount' => $totalAmount,
+            'message' => 'Weekly total retrieved successfully',
+            'success' => true,
+        ]);
+    }
+    public function getMoneyDaily()
+    {
+        $startOfDay = now()->startOfDay();
+        $endOfDay = now()->endOfDay();
+
+        $totalAmount = Order::where('status', 'completed')
+            ->whereBetween('created_at', [$startOfDay, $endOfDay])
+            ->sum('amount');
+
+        return response()->json([
+            'amount' => $totalAmount,
+            'message' => 'Daily total retrieved successfully',
+            'success' => true,
+        ]);
+    }
+
+
+
+
+
+
 
 
 

@@ -18,8 +18,18 @@ class Product extends Model
         'suggested_profit',
         'brand_name',
         'video_url',
-        'default_tag'
+        'default_tag',
+        'in_stock',
+        'quantity',
+        'cost_price',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'in_stock' => 'bool'
+        ];
+    }
 
 
 

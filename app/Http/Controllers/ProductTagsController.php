@@ -90,6 +90,71 @@ class ProductTagsController extends Controller
         return response($response);
     }
 
+
+    public function storeMultiple(Request $request)
+    {
+        $fields = Validator::make($request->all(), [
+            'tags' => 'required|array',
+            'tags.*.name' => 'required|string',
+            'tags.*.description' => 'required',
+            'tags.*.product_id' => 'required|exists:products,id',
+            'tags.*.tag_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'tags.*.make_default' => 'nullable',
+        ]);
+
+        if ($fields->fails()) {
+            return response([
+                'errors' => $fields->errors(),
+                'success' => false
+            ]);
+        }
+
+        $createdTags = [];
+        foreach ($request->tags as $tagData) {
+            $imageUrl = null;
+
+            if (isset($tagData['tag_image']) && $tagData['tag_image']->isValid()) {
+                $image = $tagData['tag_image'];
+                $imagePath = $image->store('products', 'public');
+                $filename = basename($imagePath);
+
+                // Generate the API URL for the image using your custom route
+                $imageUrl = route('prodimgs.get', ['filename' => $filename]);
+            }
+
+            // Create tag and assign tag code
+            $verificationCode = mt_rand(10000, 99999);
+
+            $tag = ProductTags::create([
+                'name' => $tagData['name'],
+                'tag_image' => $imageUrl,
+                'description' => $tagData['description'],
+                'product_id' => $tagData['product_id'],
+            ]);
+
+            $tag->update([
+                'tag_code' => $verificationCode . $tag->id,
+            ]);
+
+            // Update the default tag if applicable
+            if (!empty($tagData['make_default'])) {
+                $product = Product::find($tagData['product_id']);
+                if ($product) {
+                    $product->update(['default_tag' => $tag->id]);
+                }
+            }
+
+            $createdTags[] = $tag;
+        }
+
+        return response([
+            'tags' => $createdTags,
+            'message' => 'Tags created successfully',
+            'success' => true
+        ]);
+    }
+
+
     /**
      * Display the specified resource.
      */

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -18,7 +19,7 @@ class CategoryController extends Controller
         $category = Category::with(['products'])->orderBy('id', 'desc')->get();
 
         $response = [
-            'category' => $category,
+            'categories' => $category,
             'message' => 'category retrieved successfully',
             'success' => true
         ];
@@ -147,6 +148,39 @@ class CategoryController extends Controller
 
             return response([
                 'category' => $category->load('products'),
+                'message' => 'Products added to category successfully',
+                'success' => true
+            ], 200);
+        } catch (\Throwable $th) {
+            return response([
+                'message' => $th->getMessage(),
+                'success' => false,
+            ], 500);
+        }
+    }
+
+    public function attachCategoryToProduct(Request $request, $id)
+    {
+        $fields = Validator::make($request->all(), [
+            'categories' => 'required|array',
+            'categories.*' => 'required|integer|exists:categories,id',
+        ]);
+
+        if ($fields->fails()) {
+            return response([
+                'errors' => $fields->errors(),
+                'success' => false
+            ], 422);
+        }
+
+
+        try {
+            $product = Product::findOrFail($id);
+
+            $product->categories()->syncWithoutDetaching($request->categories);
+
+            return response([
+                'product' => $product->load('categories'),
                 'message' => 'Products added to category successfully',
                 'success' => true
             ], 200);
