@@ -3,19 +3,15 @@
 namespace App\Filament\Admin\Resources;
 
 use App\Filament\Admin\Resources\ProductResource\Pages;
-use App\Filament\Admin\Resources\ProductResource\RelationManagers;
 use App\Filament\Admin\Resources\ProductResource\RelationManagers\OrdersRelationManager;
 use App\Models\Product;
-use App\Models\ProductTags;
-use App\Models\ProductFeatureImages;
-use App\Models\Category; // Import the Category model
+use App\Models\Category;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 
 class ProductResource extends Resource
@@ -35,6 +31,7 @@ class ProductResource extends Resource
                     ->schema([
                         Forms\Components\FileUpload::make('product_image')
                             ->image()
+                            ->required()
                             ->directory('products')
                             ->columnSpanFull(),
 
@@ -42,12 +39,15 @@ class ProductResource extends Resource
                             ->required()
                             ->maxLength(255)
                             ->live(onBlur: true)
-                            ->afterStateUpdated(fn(Forms\Set $set, ?string $state) => $set('product_code', Str::slug($state))),
+                            ->afterStateUpdated(function (Forms\Set $set) {
+                                $set('product_code', 'PRD-' . strtoupper(Str::random(6)));
+                            }),
 
                         Forms\Components\TextInput::make('product_code')
-                            ->required()
+                            // ->required()
                             ->maxLength(255)
-                            ->unique(ignoreRecord: true),
+                            ->unique(ignoreRecord: true)
+                            ->readOnly(),
 
                         Forms\Components\Textarea::make('description')
                             ->columnSpanFull(),
@@ -65,30 +65,32 @@ class ProductResource extends Resource
                         Forms\Components\TextInput::make('cost_price')
                             ->numeric()
                             ->required()
-                            ->prefix('$'),
+                            ->prefix('₦'),
 
                         Forms\Components\TextInput::make('price')
                             ->numeric()
                             ->required()
-                            ->prefix('$'),
-
-                        Forms\Components\TextInput::make('suggested_profit')
-                            ->numeric()
-                            ->prefix('$')
-                            ->readOnly()
-                            ->dehydrated(false)
-                            ->afterStateHydrated(function (Forms\Components\TextInput $component, $state, ?Product $record) {
-                                if ($record) {
-                                    $component->state($record->price - $record->cost_price);
+                            ->prefix('₦')
+                            ->live()
+                            ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
+                                if ($state && is_numeric($state)) {
+                                    $suggested = $state * 1.10;
+                                    $set('suggested_profit', round($suggested, 2));
                                 }
                             }),
 
-                        Forms\Components\TextInput::make('quantity')
+                        Forms\Components\TextInput::make('suggested_profit')
                             ->numeric()
-                            ->required(),
+                            ->prefix('₦')
+                            ->readOnly()
+                            ->dehydrated(false),
+
+                        Forms\Components\TextInput::make('quantity')
+                            ->numeric(),
 
                         Forms\Components\Toggle::make('in_stock')
-                            ->required(),
+                            ->required()
+                            ->default(true),
                     ])->columns(2),
 
                 Forms\Components\Section::make('Tags')
@@ -98,17 +100,26 @@ class ProductResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('name')
                                     ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (Forms\Set $set) {
+                                        $set('tag_code', 'PRDTAG-' . strtoupper(Str::random(6)));
+                                    }),
                                 Forms\Components\TextInput::make('tag_code')
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->unique(ignoreRecord: true)
+                                    ->readOnly(),
                                 Forms\Components\Textarea::make('description'),
                                 Forms\Components\FileUpload::make('tag_image')
                                     ->image()
                                     ->directory('product-tags'),
                             ])
                             ->columns(2)
-                            ->createItemButtonLabel('Add Tag'),
+                            ->createItemButtonLabel('Add Tag')
+                            ->defaultItems(0) // prevent auto-adding an empty tag
+                            ->dehydrated(fn($state): bool => collect($state)->filter()->isNotEmpty()),
                     ]),
+
                 Forms\Components\Section::make('Featured Images')
                     ->schema([
                         Forms\Components\Repeater::make('featuredimages')
@@ -119,15 +130,19 @@ class ProductResource extends Resource
                                     ->directory('product-featured-images')
                                     ->required(),
                             ])
-                            ->createItemButtonLabel('Add Featured Image'),
+                            ->createItemButtonLabel('Add Featured Image')
+                            ->defaultItems(0) // prevent auto-adding an empty tag
+                            ->dehydrated(fn($state): bool => collect($state)->filter()->isNotEmpty()),
                     ]),
-                Forms\Components\Section::make('Categories') // Added Categories Section
+
+                Forms\Components\Section::make('Categories')
                     ->schema([
                         Forms\Components\Select::make('categories')
-                            ->relationship('categories', 'name') // 'categories' is the relationship name
+                            ->relationship('categories', 'name')
                             ->multiple()
                             ->searchable()
                             ->preload()
+                            ->required()
                             ->options(Category::all()->pluck('name', 'id')->toArray())
                             ->label('Categories'),
                     ]),
@@ -138,23 +153,13 @@ class ProductResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('product_image')
-                    ->size(50),
-                Tables\Columns\TextColumn::make('name')
-                    ->searchable()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('product_code')
-                    ->searchable(),
-                Tables\Columns\TextColumn::make('price')
-                    ->money()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('quantity')
-                    ->sortable(),
-                Tables\Columns\IconColumn::make('in_stock')
-                    ->boolean()
-                    ->sortable(),
-                Tables\Columns\TextColumn::make('categories.name')
-                    ->badge(),
+                Tables\Columns\ImageColumn::make('product_image')->size(50),
+                Tables\Columns\TextColumn::make('name')->searchable()->sortable(),
+                Tables\Columns\TextColumn::make('product_code')->searchable(),
+                Tables\Columns\TextColumn::make('price')->money('NGN')->sortable(),
+                Tables\Columns\TextColumn::make('quantity')->sortable(),
+                Tables\Columns\IconColumn::make('in_stock')->boolean()->sortable(),
+                Tables\Columns\TextColumn::make('categories.name')->badge(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -165,8 +170,9 @@ class ProductResource extends Resource
                     ->relationship('categories', 'name')
                     ->multiple()
                     ->searchable(),
-                Tables\Filters\TernaryFilter::make('in_stock')
-                    ->label('In Stock'),
+
+                Tables\Filters\TernaryFilter::make('in_stock')->label('In Stock'),
+
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('created_from'),
@@ -201,8 +207,6 @@ class ProductResource extends Resource
             OrdersRelationManager::class,
         ];
     }
-
-
 
     public static function getPages(): array
     {
