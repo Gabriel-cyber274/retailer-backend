@@ -29,7 +29,9 @@ class User extends Authenticatable
         'verification_code',
         'admin',
         'shop_name',
-        'shop_id'
+        'shop_id',
+        'phone_number',
+        'verification_expires_at',
     ];
 
 

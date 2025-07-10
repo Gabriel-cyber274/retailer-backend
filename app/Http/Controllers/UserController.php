@@ -37,19 +37,25 @@ class UserController extends Controller
                 'message' => 'incorrect credentials',
                 'success' => false
             ]);
+        } else if (is_null($user->email_verified_at)) {
+            $verificationCode = mt_rand(1000, 9999);
+            $user->update([
+                'verification_code' => $verificationCode,
+                'verification_expires_at' => now()->addMinutes(10),
+            ]);
+
+            return response([
+                'data' => $user,
+                'message' => 'email not verified',
+                'success' => false
+            ]);
         }
-        // else if(is_null($user->email_verified_at)) {
-        //     return response([
-        //         'message' => 'email not verified',
-        //         'success' => false
-        //     ], 401);
-        // }
         $token = $user->createToken('Personal Access Token', [])->plainTextToken;
 
         $response = [
-            'user' => $user,
+            'data' => $user,
             'token' => $token,
-            'message' => 'logged in',
+            'message' => 'Login successful',
             'success' => true
         ];
 
@@ -68,6 +74,7 @@ class UserController extends Controller
             'city' => 'nullable',
             'state' => 'nullable',
             'admin' => 'nullable',
+            'phone_number' => 'required|string|max:15',
         ]);
 
 
@@ -92,7 +99,9 @@ class UserController extends Controller
             'acc_balance' => 0,
             'city' => $request->city,
             'state' => $request->state,
-            'verification_code' => $verificationCode
+            'phone_number' => $request->phone_number,
+            'verification_code' => $verificationCode,
+            'verification_expires_at' => now()->addMinutes(10),
         ]);
 
 
@@ -104,8 +113,8 @@ class UserController extends Controller
 
 
         $response = [
-            'user' => $user,
-            'message' => 'successful signup',
+            'data' => $user,
+            'message' => 'Registration successful!',
             'success' => true
         ];
 
@@ -133,8 +142,10 @@ class UserController extends Controller
             $user = User::findorfail($request->user_id);
 
             $user->update([
-                'verification_code' => $verificationCode
+                'verification_code' => $verificationCode,
+                'verification_expires_at' => now()->addMinutes(10),
             ]);
+
 
 
             // Mail::send([], [], function ($message) use ($user, $verificationCode) {
@@ -182,7 +193,20 @@ class UserController extends Controller
         try {
             $user = User::findorfail($request->user_id);
 
-            if ($user->verification_code == $request->code) {
+            if ($user->verification_expires_at && Carbon::now()->greaterThan($user->verification_expires_at)) {
+                return response([
+                    'message' => 'Verification code has expired',
+                    'success' => false,
+                ]);
+            }
+
+
+            // if ($user->verification_code == $request->code) {
+            if (
+                $user->verification_code == $request->code &&
+                $user->verification_expires_at &&
+                Carbon::now()->lessThanOrEqualTo($user->verification_expires_at)
+            ) {
                 $user->email_verified_at = Carbon::now();
                 $user->save();
 
@@ -250,7 +274,8 @@ class UserController extends Controller
                 $verificationCode = mt_rand(1000, 9999);
 
                 $user->update([
-                    'verification_code' => $verificationCode
+                    'verification_code' => $verificationCode,
+                    'verification_expires_at' => now()->addMinutes(10),
                 ]);
 
                 // Mail::send([], [], function ($message) use ($user, $verificationCode) {
@@ -307,7 +332,8 @@ class UserController extends Controller
             $user = User::findorfail($request->user_id);
 
             $user->update([
-                'verification_code' => $verificationCode
+                'verification_code' => $verificationCode,
+                'verification_expires_at' => now()->addMinutes(10),
             ]);
 
 
@@ -385,6 +411,54 @@ class UserController extends Controller
             ], 500);
         }
     }
+
+
+
+    public function resetPassword(Request $request)
+    {
+        // Validate the input fields
+        $fields = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+            'code' => 'required|string',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($fields->fails()) {
+            return response([
+                'errors' => $fields->errors(),
+                'success' => false
+            ], 422);
+        }
+
+        try {
+            // Find the user
+            $user = User::where('email', $request->email)->firstOrFail();
+
+            // Check if verification code matches
+            if ($user->verification_code !== $request->code) {
+                return response([
+                    'message' => 'Invalid verification code',
+                    'success' => false
+                ], 400);
+            }
+
+            $user->password = Hash::make($request->password);
+            $user->verification_code = null;
+            $user->verification_expires_at = null;
+            $user->save();
+
+            return response([
+                'message' => 'Password reset successfully',
+                'success' => true
+            ], 200);
+        } catch (\Throwable $th) {
+            return response([
+                'message' => 'An error occurred during password reset',
+                'success' => false
+            ], 500);
+        }
+    }
+
 
     public function update(Request $request)
     {

@@ -47,6 +47,7 @@ Route::get('/prodimgs/{filename}', function ($filename) {
 Route::post('/resend-verification', [UserController::class, 'resendVerificationCode']);
 Route::post('/verify-account', [UserController::class, 'verifyUser']);
 
+Route::post('/reset-password', [UserController::class, 'resetPassword']);
 
 
 Route::group(['middleware' => ['auth:sanctum']], function () {

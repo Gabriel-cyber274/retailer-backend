@@ -75,23 +75,6 @@ class UserResource extends Resource
                             ->nullable(),
                     ])->columns(2),
 
-                Forms\Components\Section::make('Password Management')
-                    ->schema([
-                        Forms\Components\TextInput::make('password')
-                            ->label('Password')
-                            ->password()
-                            ->dehydrateStateUsing(fn($state) => bcrypt($state))
-                            ->visible(fn(?User $record) => $record === null) // Only show on creation
-                            ->required(fn(?User $record) => $record === null)
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('password_confirmation')
-                            ->label('Confirm Password')
-                            ->password()
-                            ->same('password')
-                            ->visible(fn(?User $record) => $record === null) // Only show on creation
-                            ->required(fn(?User $record) => $record === null)
-                            ->maxLength(255),
-                    ])->columns(2),
             ]);
     }
 
@@ -108,9 +91,6 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('gender')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('city')
-                    ->searchable()
-                    ->sortable(),
                 Tables\Columns\TextColumn::make('state')
                     ->searchable()
                     ->sortable(),
@@ -120,10 +100,10 @@ class UserResource extends Resource
                 Tables\Columns\IconColumn::make('admin')
                     ->boolean()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('shop_name')
+                Tables\Columns\TextColumn::make('shop_id')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('shop_id')
+                Tables\Columns\TextColumn::make('shop_name')
                     ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
