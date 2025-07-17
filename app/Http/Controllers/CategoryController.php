@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 
@@ -17,6 +18,8 @@ class CategoryController extends Controller
     public function index()
     {
         $category = Category::with(['products'])->orderBy('id', 'desc')->get();
+
+        Log::info("message" . $category);
 
         $response = [
             'categories' => $category,

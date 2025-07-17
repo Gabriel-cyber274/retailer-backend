@@ -18,7 +18,9 @@ class ProductSeeder extends Seeder
         for ($i = 0; $i < 50; $i++) {
             Product::create([
                 'name' => $faker->unique()->sentence(3),
-                'product_image' => $faker->imageUrl(640, 480, 'product', true),
+                // 'product_image' => $faker->imageUrl(640, 480, 'product', true),
+                'product_image' => 'https://images.unsplash.com/photo-1749738513460-e069e49ffdb6?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+
                 'description' => $faker->paragraph(3),
                 'price' => $faker->randomFloat(2, 10, 500),
                 'default_tag' => $faker->optional()->numberBetween(1, 10),
