@@ -88,4 +88,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(Order::class, 'user_id');
     }
+
+    public function savedProduct()
+    {
+        return $this->hasMany(SavedProduct::class, 'user_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class, 'user_id');
+    }
+
+    public function cart()
+    {
+        return $this->hasMany(UserCart::class, 'user_id');
+    }
+
+    public function addresses()
+    {
+        return $this->hasMany(UserAddress::class, 'user_id');
+    }
 }

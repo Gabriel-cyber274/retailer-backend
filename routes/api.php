@@ -6,8 +6,12 @@ use App\Http\Controllers\DepositController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductFeatureImagesController;
+use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\ProductTagsController;
 use App\Http\Controllers\RetailProductController;
+use App\Http\Controllers\SavedProductController;
+use App\Http\Controllers\UserAddressController;
+use App\Http\Controllers\UserCartController;
 use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
@@ -192,6 +196,36 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('users/today', [UserController::class, 'usersToday']);
 
     Route::get('users/monthly-onboarding', [UserController::class, 'usersOnboardedMonthly']);
+
+
+    //saved products
+    Route::get('/saved-products', [SavedProductController::class, 'index']);
+    Route::post('/saved-products', [SavedProductController::class, 'store']);
+    Route::get('/saved-products/{id}', [SavedProductController::class, 'show']);
+    Route::delete('/saved-products/{id}', [SavedProductController::class, 'destroy']);
+    Route::post('/saved-products/toggle', [SavedProductController::class, 'toggle']);
+
+    // rating
+    Route::apiResource('product-reviews', ProductReviewController::class);
+    Route::get('/review-by-product/{id}', [ProductReviewController::class, 'productReview']);
+
+    //cart
+    Route::get('/cart', [UserCartController::class, 'index']);
+    Route::post('/cart', [UserCartController::class, 'store']);
+    Route::get('/cart/{userCart}', [UserCartController::class, 'show']);
+    Route::post('/cart/{userCart}', [UserCartController::class, 'update']);
+    Route::delete('/cart/{userCart}', [UserCartController::class, 'destroy']);
+
+    //addresses
+    Route::get('/user-addresses', [UserAddressController::class, 'index']);
+    Route::post('/user-addresses', [UserAddressController::class, 'store']);
+    Route::get('/user-addresses/{userAddress}', [UserAddressController::class, 'show']);
+    Route::post('/user-addresses/{userAddress}', [UserAddressController::class, 'update']);
+    Route::delete('/user-addresses/{userAddress}', [UserAddressController::class, 'destroy']);
+
+
+
+
 
 
 

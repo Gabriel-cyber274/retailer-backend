@@ -22,4 +22,9 @@ class ProductTags extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function cart()
+    {
+        return $this->hasMany(UserCart::class, 'tag_id');
+    }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -128,10 +129,17 @@ class ProductController extends Controller
     public function show($id)
     {
         try {
-            $product = Product::with(['tags', 'categories', 'featuredimages'])->findorfail($id);
+            $userId = Auth::id();
+
+            $product = Product::with(['tags', 'categories', 'featuredimages', 'savedProduct', 'reviews'])
+                ->findOrFail($id);
+
+            $product->isSaved = $product->savedProduct->contains('user_id', $userId);
+            $product->averageReview = $product->reviews->avg('rate');
+            unset($product->savedProduct); // optionally remove to keep response clean
 
             return response([
-                'message' => 'product retrieved successfully',
+                'message' => 'Product retrieved successfully.',
                 'success' => true,
                 'product' => $product
             ], 200);
@@ -142,6 +150,7 @@ class ProductController extends Controller
             ], 200);
         }
     }
+
 
     public function update(Request $request, $id)
     {

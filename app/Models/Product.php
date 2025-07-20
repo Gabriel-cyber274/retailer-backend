@@ -61,4 +61,19 @@ class Product extends Model
     {
         return $this->hasMany(Order::class, 'product_id');
     }
+
+    public function savedProduct()
+    {
+        return $this->hasMany(SavedProduct::class, 'product_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(ProductReview::class, 'product_id');
+    }
+
+    public function cart()
+    {
+        return $this->hasMany(UserCart::class, 'product_id');
+    }
 }

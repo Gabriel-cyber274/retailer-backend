@@ -17,17 +17,24 @@ class CategoryController extends Controller
      */
     public function index()
     {
-        $category = Category::with(['products'])->orderBy('id', 'desc')->get();
+        $userId = Auth::id();
 
-        Log::info("message" . $category);
+        $categories = Category::with(['products.savedProduct'])
+            ->orderBy('id', 'desc')
+            ->get();
 
-        $response = [
-            'categories' => $category,
-            'message' => 'category retrieved successfully',
-            'success' => true
-        ];
+        $categories->each(function ($category) use ($userId) {
+            $category->products->each(function ($product) use ($userId) {
+                $product->isSaved = $product->savedProduct->contains('user_id', $userId);
+                unset($product->savedProduct); // optionally remove to keep response clean
+            });
+        });
 
-        return response($response);
+        return response()->json([
+            'categories' => $categories,
+            'message' => 'Categories retrieved successfully.',
+            'success' => true,
+        ]);
     }
 
     public function store(Request $request)
