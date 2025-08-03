@@ -538,7 +538,7 @@ class UserController extends Controller
 
             $response = [
                 'user' => $user,
-                'message' => 'user activated successfully',
+                'message' => 'shop activated successfully',
                 'success' => true
             ];
 

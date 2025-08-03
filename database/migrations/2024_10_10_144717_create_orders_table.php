@@ -17,20 +17,27 @@ return new class extends Migration
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
+
             $table->string('amount');
             $table->string('address');
-            $table->string('quantity');
+            $table->string('reference')->nullable();
+            $table->string('dispatch_number')->nullable();
+            $table->string('payment_method');
             $table->string('status')->default('pending');
-            $table->foreignId('product_id')
-                ->constrained('products')
+            
+            $table->foreignId('customer_id')
+                ->nullable()
+                ->constrained('customers')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
 
-            $table->foreignId('deposit_id')
-                ->nullable()
-                ->constrained('deposits')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
+
+
+            // $table->foreignId('deposit_id')
+            //     ->nullable()
+            //     ->constrained('deposits')
+            //     ->onUpdate('cascade')
+            //     ->onDelete('cascade');
 
 
             $table->timestamps();

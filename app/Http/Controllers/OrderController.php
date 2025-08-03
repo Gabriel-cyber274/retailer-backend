@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Deposit;
 use App\Models\Order;
+use App\Models\retailProduct;
 use App\Models\User;
+use App\Models\UserCart;
+use App\Models\Withdrawal;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -237,7 +240,7 @@ class OrderController extends Controller
     public function index()
     {
         $userId = auth()->id();
-        $orders = Order::with(['user', 'deposit.resell', 'product'])->where('user_id', $userId)->orderBy('id', 'desc')->get();
+        $orders = Order::with(['products'])->where('user_id', $userId)->orderBy('id', 'desc')->get();
 
         return response([
             'orders' => $orders,
@@ -246,89 +249,157 @@ class OrderController extends Controller
         ]);
     }
 
+    public function directOrders()
+    {
+        $userId = auth()->id();
+        $orders = Order::with(['products'])->where('user_id', $userId)->where('type', 'direct_purchase')->orderBy('id', 'desc')->get();
+
+        $orders = $orders->map(function ($order) use ($userId) {
+            $order->products = $order->products->map(function ($product) use ($userId) {
+                $product->has_reviewed = $product->reviews()->where('user_id', $userId)->exists();
+                return $product;
+            });
+            return $order;
+        });
+
+        return response([
+            'orders' => $orders,
+            'message' => 'order retrieved successfully',
+            'success' => true,
+        ]);
+    }
+
+    public function customerOrders()
+    {
+        $userId = auth()->id();
+
+        $orders = Order::with(['resells.product', 'customer', 'products.reviews'])->where('user_id', $userId)
+            ->where('type', 'customer_purchase')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $orders = $orders->map(function ($order) use ($userId) {
+            // Add has_reviewed to each product
+            $order->products->map(function ($product) use ($userId) {
+                $product->has_reviewed = $product->reviews->where('user_id', $userId)->isNotEmpty();
+                return $product;
+            });
+
+            // Attach product data (with has_reviewed if needed) to each resell
+            $order->resells->map(function ($resell) use ($userId) {
+                $product = $resell->product;
+                if ($product) {
+                    $product->has_reviewed = $product->reviews()->where('user_id', $userId)->exists();
+                    $resell->setRelation('product', $product);
+                }
+                return $resell;
+            });
+
+            return $order;
+        });
+
+        return response([
+            'orders' => $orders,
+            'message' => 'Orders retrieved successfully',
+            'success' => true,
+        ]);
+    }
 
 
 
     public function store(Request $request)
     {
-        // Validate request fields
         $fields = Validator::make($request->all(), [
-            'quantity' => 'required',
-            'amount' => 'required',
-            'deposit_id' => 'nullable|exists:deposits,id',
+            'user_id' => 'required|exists:users,id',
+            'quantity' => 'required|array|min:1',
+            'quantity.*' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:0',
+            'retail_id' => 'nullable|array',
+            'retail_id.*' => 'nullable|exists:retail_products,id',
+            'customer_id' => 'nullable|exists:customers,id',
             'address' => 'required|string|max:255',
-            'product_id' => 'required|exists:products,id',
-            'type' => 'required'
+            'product_id' => 'required|array|min:1',
+            'product_id.*' => 'required|exists:products,id',
+            'type' => 'required|in:direct_purchase,customer_purchase',
+            'reference' => 'nullable|string',
+            'payment_method' => 'required|in:paystack,shop_balance',
         ]);
 
         if ($fields->fails()) {
             return response([
                 'errors' => $fields->errors(),
                 'success' => false
-            ], 400); // Return 400 Bad Request for validation errors
+            ], 400);
         }
 
-        $userId = auth()->id();
-        $user = User::find($userId);
-
-        // $request->type is either 'account-balance-payment' or 'paystack-payment' or 'deposit-payment'
-
-        // Start database transaction for safety
+        $user = User::find($request->user_id);
         DB::beginTransaction();
 
         try {
-            $order = null;
+            if ($request->type === 'direct_purchase') {
+                UserCart::where('user_id', $request->user_id)
+                    ->where('status', '!=', 'completed')
+                    ->update(['status' => 'completed']);
+            }
 
-            // Process based on payment type
-            if ($request->type === 'account-balance-payment' || $request->type === 'deposit-payment') {
-                $deposit_amount = Deposit::where('user_id', $userId)->where('status', 'pending')->sum('amount');
-                $acc_bal = $user->acc_balance;
-
-                $order_balance = ($acc_bal == $deposit_amount) ? $deposit_amount :  $acc_bal - $deposit_amount;
-
-                if ($order_balance < $request->amount) {
-                    DB::rollBack();
-
-                    if ($request->type === 'account-balance-payment' && $deposit_amount == 0) {
-                        $message = 'Insufficient account balance.';
-                    } else if (($request->type === 'deposit-payment' || $request->type === 'account-balance-payment') && $deposit_amount > 0) {
-                        $message = 'You have some pending sales you need to order';
-                    }
-                    return response([
-                        'order_balance' => $order_balance,
-                        'message' => $message,
-                        'success' => false
-                    ], 400);
-                }
+            // Check balance if using shop_balance
+            if ($request->payment_method === 'shop_balance' && $user->acc_balance < $request->amount) {
+                DB::rollBack();
+                return response([
+                    'message' => "Insufficient Balance",
+                    'success' => false
+                ], 200);
             }
 
             $order = Order::create([
-                'user_id' => $userId,
+                'user_id' => $request->user_id,
                 'amount' => $request->amount,
-                'quantity' => $request->quantity,
-                'deposit_id' => $request->deposit_id,
-                'product_id' => $request->product_id,
                 'address' => $request->address,
                 'status' => 'pending',
-                'type' => $request->type
+                'type' => $request->type,
+                'payment_method' => $request->payment_method,
+                'reference' => $request->reference,
+                'customer_id' => $request->customer_id,
             ]);
 
-            if ($request->type === 'account-balance-payment' || $request->type === 'deposit-payment') {
+            // Attach products with quantity
+            foreach ($request->product_id as $index => $productId) {
+                $order->products()->attach($productId, [
+                    'quantity' => $request->quantity[$index] ?? 1
+                ]);
+            }
+
+            // Attach retail products if provided
+            if ($request->has('retail_id')) {
+                foreach ($request->retail_id as $index => $retailId) {
+                    $order->resells()->attach($retailId, [
+                        'quantity' => $request->quantity[$index] ?? 1
+                    ]);
+                }
+            }
+
+            // If using shop_balance, withdraw
+            if ($request->payment_method === 'shop_balance') {
+                Withdrawal::create([
+                    'user_id' => $request->user_id,
+                    'amount' => $request->amount,
+                    'type' => $request->type,
+                    'status' => 'completed'
+                ]);
+
                 $user->decrement('acc_balance', $request->amount);
             }
 
-            // Commit the transaction
             DB::commit();
 
             return response([
-                'order' => $order,
+                'order' => $order->load('products', 'resells'),
                 'message' => 'Order created successfully',
                 'success' => true,
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
 
-            // Return error response
             return response([
                 'message' => 'Failed to create order',
                 'error' => $e->getMessage(),
@@ -338,13 +409,14 @@ class OrderController extends Controller
     }
 
 
+
     /**
      * Display the specified resource.
      */
     public function show($id)
     {
         try {
-            $order = Order::with(['user', 'deposit.resell', 'product'])->findOrFail($id);
+            $order = Order::with(['user', 'product'])->findOrFail($id);
 
             return response([
                 'order' => $order,
@@ -364,40 +436,60 @@ class OrderController extends Controller
         DB::beginTransaction();
 
         try {
-            // Find the order with relations or fail
-            $order = Order::with(['user', 'deposit.resell', 'product'])->findOrFail($id);
+            $order = Order::with(['resells', 'products'])->findOrFail($id);
+            $user = User::findOrFail($order->user_id);
 
-            // Update the order with the validated data
-            $order->update($request->all());
-
-            $user = User::find($order->user_id);
-
-            // Handle order status change
             if (!is_null($request->status)) {
-                if ($request->status == 'cancelled') {
-                    $user->increment('acc_balance', $order->amount);
-                } elseif ($request->status == 'completed' && !is_null($order->deposit_id)) {
-                    Deposit::where('id', $order->deposit_id)->update(['status' => 'completed']);
+                if ($order->resells->isNotEmpty()) {
+                    $order->update(['status' => 'completed']);
+
+                    $creditAmount = 0;
+                    $retailIds = $order->resells->pluck('retail_id');
+                    $retailProducts = RetailProduct::whereIn('id', $retailIds)->get()->keyBy('id');
+
+                    foreach ($order->resells as $retail) {
+                        $retailProduct = $retailProducts[$retail->retail_id] ?? null;
+                        if ($retailProduct) {
+                            $creditAmount += $retailProduct->gain * $retail->quantity;
+                        }
+                    }
+
+                    $user->increment('acc_balance', $creditAmount);
+
+                    Deposit::create([
+                        'user_id' => $order->user_id,
+                        'amount' => $creditAmount,
+                        'customer_id' => $order->customer_id,
+                        'status' => 'completed',
+                        'order_id' => $order->id
+                    ]);
                 }
+            } else if (!is_null($request->dispatch_number)) {
+                $order->update(['dispatch_number' => $request->dispatch_number]);
+            } else {
+                return response([
+                    'message' => 'No update parameters provided',
+                    'success' => false,
+                ], 400);
             }
 
-            // Commit the transaction if everything is successful
             DB::commit();
 
             return response([
                 'order' => $order,
                 'message' => 'Order updated successfully',
                 'success' => true,
-            ], 200); // OK
+            ], 200);
         } catch (\Throwable $th) {
             DB::rollBack();
 
             return response([
                 'message' => 'Failed to update order: ' . $th->getMessage(),
                 'success' => false,
-            ], 500); // Server error
+            ], 500);
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
@@ -405,7 +497,7 @@ class OrderController extends Controller
     public function destroy($id)
     {
         try {
-            $order = Order::with(['user', 'deposit.resell', 'product'])->findOrFail($id);
+            $order = Order::with(['user', 'product'])->findOrFail($id);
 
             $order->delete();
 

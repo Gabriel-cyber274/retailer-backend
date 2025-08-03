@@ -116,7 +116,7 @@ class UserAddressController extends Controller
         ]);
     }
 
-    // 🛡 Ensure the cart item belongs to the authenticated user
+    // Ensure the cart item belongs to the authenticated user
     protected function authorizeAccess(UserAddress $userAddress)
     {
         if ($userAddress->user_id !== Auth::id()) {

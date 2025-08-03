@@ -6,6 +6,7 @@ use App\Models\UserCart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class UserCartController extends Controller
 {
@@ -28,7 +29,7 @@ class UserCartController extends Controller
     {
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'tag_id'     => 'required|exists:product_tags,id',
+            'tag_id'     => 'nullable|exists:product_tags,id',
             'quantity'   => 'required|integer|min:1',
         ]);
 
@@ -37,11 +38,14 @@ class UserCartController extends Controller
             'user_id'    => Auth::id(),
             'product_id' => $validated['product_id'],
             'tag_id'     => $validated['tag_id'],
+            'status' => 'active'
         ])->first();
 
         if ($cartItem) {
-            // Increment the quantity if it exists
-            $cartItem->increment('quantity', $validated['quantity']);
+            if ($cartItem->status == 'active') {
+                // Increment the quantity if it exists
+                $cartItem->increment('quantity', $validated['quantity']);
+            }
         } else {
             $cartItem = UserCart::create([
                 'user_id'    => Auth::id(),

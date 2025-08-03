@@ -11,18 +11,11 @@ class Deposit extends Model
 
     protected $fillable = [
         'user_id',
-        'retail_id',
-        'quantity',
         'amount',
         'customer_id',
-        'status'
+        'status',
+        'order_id'
     ];
-
-
-    public function resell()
-    {
-        return $this->belongsTo(retailProduct::class, 'retail_id');
-    }
 
 
     public function user()
@@ -38,12 +31,9 @@ class Deposit extends Model
     }
 
 
-    
-    public function orders()
+
+    public function order()
     {
-        return $this->hasOne(Order::class, 'deposit_id');
+        return $this->belongsTo(Order::class, 'order_id');
     }
-
-
-
 }

@@ -11,16 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('withdrawals', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')
-                ->constrained('users')
+        Schema::table('deposits', function (Blueprint $table) {
+            $table->foreignId('order_id')
+                ->constrained('orders')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            $table->string('amount');
-            $table->string('type');
-            $table->string('status')->default('pending');
-            $table->timestamps();
         });
     }
 
@@ -29,6 +24,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('withdrawals');
+        Schema::table('deposits', function (Blueprint $table) {
+            //
+        });
     }
 };

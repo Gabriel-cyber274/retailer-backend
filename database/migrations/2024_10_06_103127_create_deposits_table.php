@@ -17,11 +17,6 @@ return new class extends Migration
                 ->constrained('users')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
-            $table->foreignId('retail_id')
-                ->constrained('retail_products')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
-            $table->integer('quantity');
             $table->string('amount');
             $table->timestamps();
         });

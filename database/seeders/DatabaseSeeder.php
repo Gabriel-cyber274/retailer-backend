@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
             CategoryProductSeeder::class,
             RetailProductSeeder::class,
             CustomerSeeder::class,
-            DepositSeeder::class,
+            // DepositSeeder::class,
             CategoryRetailProductSeeder::class,
 
         ]);

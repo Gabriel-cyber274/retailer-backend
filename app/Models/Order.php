@@ -12,12 +12,16 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'amount',
-        'quantity',
-        'deposit_id',
-        'product_id',
+        // 'quantity',
+        // 'retail_id',
+        // 'product_id',
         'address',
         'status',
-        'type'
+        'type',
+        'reference',
+        'customer_id',
+        'payment_method',
+        'dispatch_number'
     ];
 
     public function user()
@@ -25,13 +29,31 @@ class Order extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function deposit()
+    // public function product()
+    // {
+    //     return $this->belongsTo(Product::class);
+    // }
+
+    public function products()
     {
-        return $this->belongsTo(Deposit::class);
+        return $this->belongsToMany(Product::class, 'order_product')->withPivot('quantity');
     }
 
-    public function product()
+    public function resells()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsToMany(retailProduct::class, 'order_retail_product', 'order_id', 'retail_id')->withPivot('quantity');
+    }
+
+
+
+    // public function resell()
+    // {
+    //     return $this->belongsTo(retailProduct::class, 'retail_id');
+    // }
+
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 }

@@ -24,6 +24,7 @@ return new class extends Migration
                 ->onDelete('cascade');
 
             $table->foreignId('tag_id')
+                ->nullable()
                 ->constrained('product_tags')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');

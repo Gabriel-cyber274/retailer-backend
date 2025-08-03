@@ -131,12 +131,13 @@ class ProductController extends Controller
         try {
             $userId = Auth::id();
 
-            $product = Product::with(['tags', 'categories', 'featuredimages', 'savedProduct', 'reviews'])
+            $product = Product::with(['tags', 'categories', 'featuredimages', 'savedProduct', 'reviews', 'retails'])
                 ->findOrFail($id);
 
             $product->isSaved = $product->savedProduct->contains('user_id', $userId);
+            $product->isInShop = $product->retails->contains('user_id', $userId);
             $product->averageReview = $product->reviews->avg('rate');
-            unset($product->savedProduct); // optionally remove to keep response clean
+            unset($product->savedProduct);
 
             return response([
                 'message' => 'Product retrieved successfully.',
@@ -225,6 +226,36 @@ class ProductController extends Controller
                 'message' => $th->getMessage(),
                 'success' => false,
             ], 200);
+        }
+    }
+
+
+    public function search($slug)
+    {
+        try {
+            $products = Product::with(['tags', 'categories', 'featuredimages'])
+                ->where('name', 'like', "%{$slug}%")
+                ->orWhere('brand_name', 'like', "%{$slug}%")
+                ->orWhere('product_code', 'like', "%{$slug}%")
+                ->orWhereHas('tags', function ($query) use ($slug) {
+                    $query->where('name', 'like', "%{$slug}%");
+                })
+                ->orWhereHas('categories', function ($query) use ($slug) {
+                    $query->where('name', 'like', "%{$slug}%");
+                })
+                ->orderBy('id', 'desc')
+                ->get();
+
+            return response([
+                'message' => 'products retrived successfully',
+                'success' => true,
+                'products' => $products
+            ], 200);
+        } catch (\Throwable $th) {
+            return response([
+                'message' => 'An error occurred: ' . $th->getMessage(),
+                'success' => false,
+            ], 500);
         }
     }
 }

@@ -64,6 +64,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/products-outofstock', [ProductController::class, 'allOutOfStock']);
 
     Route::post('/products', [ProductController::class, 'store']);
+
+    Route::get('/products/search/{slug}', [ProductController::class, 'search']);
+
     Route::get('/products/{id}', [ProductController::class, 'show']);
     Route::post('/products/{id}', [ProductController::class, 'update']);
     Route::delete('/products/{id}', [ProductController::class, 'destroy']);
@@ -129,7 +132,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::delete('/retails/{id}', [RetailProductController::class, 'destroy']);
 
 
-    Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders-allPending', [OrderController::class, 'allPending']);
     Route::get('/orders-allCompleted', [OrderController::class, 'allCompleted']);
     Route::get('/orders-allCancelled', [OrderController::class, 'allCancelled']);
@@ -149,6 +151,10 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/orders-allWeekly', [OrderController::class, 'getWeeklyOrders']);
     Route::get('/orders-allcreatedMonthly', [OrderController::class, 'ordersCreatedMonthly']);
 
+
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders-direct', [OrderController::class, 'directOrders']);
+    Route::get('/orders-customer', [OrderController::class, 'customerOrders']);
 
     Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);

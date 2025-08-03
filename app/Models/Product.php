@@ -57,10 +57,10 @@ class Product extends Model
     }
 
 
-    public function orders()
-    {
-        return $this->hasMany(Order::class, 'product_id');
-    }
+    // public function orders()
+    // {
+    //     return $this->hasMany(Order::class, 'product_id');
+    // }
 
     public function savedProduct()
     {
@@ -75,5 +75,10 @@ class Product extends Model
     public function cart()
     {
         return $this->hasMany(UserCart::class, 'product_id');
+    }
+
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class, 'order_product');
     }
 }
