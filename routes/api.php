@@ -22,6 +22,11 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 
+Route::post('/orders', [OrderController::class, 'store']);
+Route::post('/customers', [CustomerController::class, 'store']);
+
+
+
 Route::post('/register', [UserController::class, 'Register']);
 Route::post('/login', [UserController::class, 'Login']);
 
@@ -54,9 +59,9 @@ Route::post('/verify-account', [UserController::class, 'verifyUser']);
 Route::post('/reset-password', [UserController::class, 'resetPassword']);
 
 
+
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
-
-
 
     Route::get('/products', [ProductController::class, 'index']);
 
@@ -84,7 +89,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
     Route::get('/customers', [CustomerController::class, 'index']);
-    Route::post('/customers', [CustomerController::class, 'store']);
+    // Route::post('/customers', [CustomerController::class, 'store']);
     Route::get('/customers/{id}', [CustomerController::class, 'show']);
     Route::post('/customers/{id}', [CustomerController::class, 'update']);
     Route::delete('/customers/{id}', [CustomerController::class, 'destroy']);
@@ -156,7 +161,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/orders-direct', [OrderController::class, 'directOrders']);
     Route::get('/orders-customer', [OrderController::class, 'customerOrders']);
 
-    Route::post('/orders', [OrderController::class, 'store']);
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/{id}', [OrderController::class, 'update']);
     Route::delete('/orders/{id}', [OrderController::class, 'destroy']);

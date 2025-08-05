@@ -29,10 +29,12 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         $fields = Validator::make($request->all(), [
+            'user_id' => 'required|exists:users,id',
             'name' => 'required|string',
             'email' => 'required|string',
             'phone_no' => 'required',
             'address' => 'required',
+            'note' => 'nullable'
         ]);
 
         if ($fields->fails()) {
@@ -44,7 +46,7 @@ class CustomerController extends Controller
             return response($response);
         }
 
-        $userId = auth()->id();
+        $userId = $request->user_id;
 
         $checkCustomer = Customer::where('email', $request->email)->get();
 
@@ -63,7 +65,8 @@ class CustomerController extends Controller
             'address' => $request->address,
             'name' => $request->name,
             'email' => $request->email,
-            'phone_no' => $request->phone_no
+            'phone_no' => $request->phone_no,
+            'note' => $request->note
         ]);
 
 
