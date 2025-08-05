@@ -13,6 +13,7 @@ use App\Http\Controllers\SavedProductController;
 use App\Http\Controllers\UserAddressController;
 use App\Http\Controllers\UserCartController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WithdrawalController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
@@ -232,6 +233,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/user-addresses/{userAddress}', [UserAddressController::class, 'show']);
     Route::post('/user-addresses/{userAddress}', [UserAddressController::class, 'update']);
     Route::delete('/user-addresses/{userAddress}', [UserAddressController::class, 'destroy']);
+
+
+    //withdrawal 
+    Route::apiResource('withdrawals', WithdrawalController::class);
+
 
 
 

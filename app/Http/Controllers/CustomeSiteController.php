@@ -15,4 +15,6 @@ class CustomeSiteController extends Controller
 
         return view('custom_home_page', compact('user'));
     }
+   
+    
 }
