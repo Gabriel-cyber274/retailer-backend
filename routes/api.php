@@ -162,6 +162,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/orders-direct', [OrderController::class, 'directOrders']);
     Route::get('/orders-customer', [OrderController::class, 'customerOrders']);
 
+    
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/{id}', [OrderController::class, 'update']);
     Route::delete('/orders/{id}', [OrderController::class, 'destroy']);

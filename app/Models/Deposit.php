@@ -14,7 +14,9 @@ class Deposit extends Model
         'amount',
         'customer_id',
         'status',
-        'order_id'
+        'order_id',
+        'reference',
+        'payment_method'
     ];
 
 

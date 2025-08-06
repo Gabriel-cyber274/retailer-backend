@@ -74,7 +74,7 @@ class ProductResource extends Resource
                             ->live()
                             ->afterStateUpdated(function (Forms\Set $set, ?string $state) {
                                 if ($state && is_numeric($state)) {
-                                    $suggested = $state * 1.10;
+                                    $suggested = $state * 0.4;
                                     $set('suggested_profit', round($suggested, 2));
                                 }
                             }),

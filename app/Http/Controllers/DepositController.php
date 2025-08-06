@@ -186,9 +186,9 @@ class DepositController extends Controller
     {
         $userId = auth()->id();
 
-        $deposit = Deposit::with(['resell.product', 'customer', 'user'])->where('user_id', $userId)->orderBy('id', 'desc')->get();
+        $deposit = Deposit::with(['customer', 'user'])->where('user_id', $userId)->orderBy('id', 'desc')->get();
         return response([
-            'deposit' => $deposit,
+            'deposits' => $deposit,
             'message' => 'deposits retrieved successfully',
             'success' => true,
         ]);
@@ -198,10 +198,9 @@ class DepositController extends Controller
     public function store(Request $request)
     {
         $fields = Validator::make($request->all(), [
-            'retail_id' => 'required|exists:retail_products,id',
-            'quantity' => 'required',
+            'reference' => 'required',
+            'payment_method' => 'required',
             'amount' => 'required',
-            'customer_id' => 'required|exists:customers,id'
         ]);
 
         if ($fields->fails()) {
@@ -222,10 +221,10 @@ class DepositController extends Controller
             // Create a deposit record
             $deposit = Deposit::create([
                 'user_id' => $userId,
-                'retail_id' => $request->retail_id,
-                'quantity' => $request->quantity,
+                'reference' => $request->reference,
+                'payment_method' => $request->payment_method,
                 'amount' => $request->amount,
-                'customer_id' => $request->customer_id
+                'status' => 'completed',
             ]);
 
             $user->increment('acc_balance', $request->amount);

@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('deposits', function (Blueprint $table) {
-            $table->foreignId('customer_id')
-            
-                ->constrained('customers')
-                ->onUpdate('cascade')
-                ->onDelete('cascade');
+        Schema::table('retail_products', function (Blueprint $table) {
+            $table->softDeletes();
         });
     }
 
@@ -25,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('deposits', function (Blueprint $table) {
-            $table->dropForeign(['customer_id']);
+        Schema::table('retail_products', function (Blueprint $table) {
+            $table->dropSoftDeletes();
         });
     }
 };

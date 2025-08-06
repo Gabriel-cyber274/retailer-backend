@@ -13,9 +13,13 @@ return new class extends Migration
     {
         Schema::table('deposits', function (Blueprint $table) {
             $table->foreignId('order_id')
+                ->nullable()
                 ->constrained('orders')
                 ->onUpdate('cascade')
                 ->onDelete('cascade');
+
+            $table->string('reference')->nullable();
+            $table->string('payment_method')->nullable();
         });
     }
 
@@ -25,7 +29,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('deposits', function (Blueprint $table) {
-            //
+            $table->dropForeign(['order_id']);
+            $table->dropColumn(['order_id', 'reference', 'payment_method']);
         });
     }
 };

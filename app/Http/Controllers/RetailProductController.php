@@ -57,6 +57,7 @@ class RetailProductController extends Controller
         ]);
     }
 
+
     public function store(Request $request)
     {
         $fields = Validator::make($request->all(), [
@@ -64,24 +65,37 @@ class RetailProductController extends Controller
             'product_id' => 'required',
         ]);
 
-
         if ($fields->fails()) {
-            $response = [
+            return response([
                 'errors' => $fields->errors(),
-                'success' => false
-            ];
-
-            return response($response);
+                'success' => false,
+            ]);
         }
 
         $userId = auth()->id();
-
         $user = User::find($userId);
 
         if (is_null($user->shop_name)) {
             return response([
-                'message' => 'you have not activated your shop',
+                'message' => 'You have not activated your shop',
                 'success' => false,
+            ]);
+        }
+
+        // Check if soft-deleted retailProduct exists
+        $retail = retailProduct::withTrashed()
+            ->where('product_id', $request->product_id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($retail) {
+            if ($retail->trashed()) {
+                $retail->restore(); // 👈 Restore soft-deleted
+            }
+
+            // Update gain if changed
+            $retail->update([
+                'gain' => $request->gain,
             ]);
         } else {
             $retail = retailProduct::create([
@@ -89,15 +103,16 @@ class RetailProductController extends Controller
                 'product_id' => $request->product_id,
                 'user_id' => $userId,
             ]);
-
-            return response([
-                'retail' => $retail,
-                'user' => $user,
-                'message' => 'product added to shop successfully',
-                'success' => true,
-            ]);
         }
+
+        return response([
+            'retail' => $retail,
+            'user' => $user,
+            'message' => 'Product added to shop successfully',
+            'success' => true,
+        ]);
     }
+
 
     /**
      * Display the specified resource.
@@ -146,7 +161,10 @@ class RetailProductController extends Controller
     public function destroy($id)
     {
         try {
-            $retail = retailProduct::with(['user', 'product'])->findOrFail($id);
+            // $retail = retailProduct::with(['user', 'product'])->findOrFail($id);
+            $retail = retailProduct::where('product_id', $id)
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
 
             $retail->delete();
 

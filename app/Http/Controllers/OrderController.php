@@ -11,6 +11,7 @@ use App\Models\Withdrawal;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
@@ -444,14 +445,9 @@ class OrderController extends Controller
                     $order->update(['status' => 'completed']);
 
                     $creditAmount = 0;
-                    $retailIds = $order->resells->pluck('retail_id');
-                    $retailProducts = RetailProduct::whereIn('id', $retailIds)->get()->keyBy('id');
 
                     foreach ($order->resells as $retail) {
-                        $retailProduct = $retailProducts[$retail->retail_id] ?? null;
-                        if ($retailProduct) {
-                            $creditAmount += $retailProduct->gain * $retail->quantity;
-                        }
+                        $creditAmount += $retail->gain * $retail->pivot->quantity;
                     }
 
                     $user->increment('acc_balance', $creditAmount);
@@ -461,8 +457,11 @@ class OrderController extends Controller
                         'amount' => $creditAmount,
                         'customer_id' => $order->customer_id,
                         'status' => 'completed',
-                        'order_id' => $order->id
+                        'order_id' => $order->id,
+                        'payment_method' => 'retail_deposit'
                     ]);
+                } else {
+                    $order->update(['status' => 'completed']);
                 }
             } else if (!is_null($request->dispatch_number)) {
                 $order->update(['dispatch_number' => $request->dispatch_number]);
