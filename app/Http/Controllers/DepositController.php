@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class DepositController extends Controller
 {
@@ -215,8 +217,21 @@ class DepositController extends Controller
         DB::beginTransaction();
 
         try {
-            // Retrieve the authenticated user
             $user = User::find($userId);
+
+            if (!is_null($request->reference)) {
+                $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
+                    ->get("https://api.paystack.co/transaction/verify/{$request->reference}");
+
+                if (!$response->successful() || !isset($response['data']['status']) || $response['data']['status'] !== 'success') {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment verification failed',
+                        'data' => $response->json()
+                    ]);
+                }
+            }
 
             // Create a deposit record
             $deposit = Deposit::create([

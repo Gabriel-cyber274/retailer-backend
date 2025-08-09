@@ -11,6 +11,7 @@ use App\Models\Withdrawal;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
@@ -351,6 +352,24 @@ class OrderController extends Controller
                     'success' => false
                 ], 200);
             }
+
+            if (!is_null($request->reference)) {
+                $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))
+                    ->get("https://api.paystack.co/transaction/verify/{$request->reference}");
+
+
+                Log::info('Paystack verification response: ', ['response' => $response->json()]);
+
+                if (!$response->successful() || !isset($response['data']['status']) || $response['data']['status'] !== 'success') {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Payment verification failed',
+                        'data' => $response->json()
+                    ]);
+                }
+            }
+
 
             $order = Order::create([
                 'user_id' => $request->user_id,

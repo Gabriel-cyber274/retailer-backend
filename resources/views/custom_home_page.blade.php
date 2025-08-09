@@ -10,6 +10,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Bootstrap CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+
     <style>
         .product-card {
             transition: all 0.3s ease;
@@ -448,29 +451,76 @@
         let cart = [];
         let isCartOpen = false;
         let currentRetail = null;
-        let originalProducts = [];
+        // let originalProducts = [];
         let searchTimeout = null;
         let currentSearchTerm = '';
         let isSearching = false;
 
+        const paystackSecretKey = "{{ config('app.paystack_secret_key') }}";
+        const paystackPublicKey = "{{ config('app.paystack_public_key') }}";
+
+
         const dispatchFee = 5000;
-
-
         const user_id = document.getElementById('user_id');
 
 
 
+
         // Store original products for filtering
+        // document.addEventListener('DOMContentLoaded', function() {
+        //     const productCards = document.querySelectorAll('.product-card');
+        //     productCards.forEach(card => {
+        //         originalProducts.push({
+        //             element: card,
+        //             name: card.dataset.productName,
+        //             price: parseFloat(card.dataset.productPrice),
+        //             brand: card.dataset.productBrand,
+        //             description: card.dataset.productDescription,
+        //             product_code: card.dataset.productCode || '',
+        //             tags: card.dataset.tags ? card.dataset.tags.split(',') : [],
+        //             categories: card.dataset.categories ? card.dataset.categories.split(',') : []
+        //         });
+        //     });
+        //     updateResultsInfo();
+        // });
+
+        // Store original products for filtering
+        const originalProducts = {!! json_encode(
+            $user->retails->map(function ($retail) {
+                $finalPrice = $retail->product->price + $retail->gain;
+                return [
+                    'id' => $retail->id,
+                    'name' => strtolower($retail->product->name),
+                    'price' => $finalPrice,
+                    'brand' => strtolower($retail->product->brand_name ?? ''),
+                    'description' => strtolower($retail->product->description),
+                    'product_code' => $retail->product->product_code ?? '',
+                    'in_stock' => $retail->product->in_stock,
+                    'product_image' => $retail->product->product_image ?? '',
+                    'product' => $retail->product,
+                    'gain' => $retail->gain,
+                    'element' => null,
+                    'categories' => $retail->product->categories
+                        ? $retail->product->categories->pluck('name')->map(function ($category) {
+                                return strtolower($category);
+                            })->toArray()
+                        : [],
+                    'tags' => $retail->product->tags
+                        ? $retail->product->tags->pluck('name')->map(function ($tag) {
+                                return strtolower($tag);
+                            })->toArray()
+                        : [],
+                ];
+            }),
+        ) !!};
+
+        // After DOM is loaded, connect the elements to the products
         document.addEventListener('DOMContentLoaded', function() {
             const productCards = document.querySelectorAll('.product-card');
-            productCards.forEach(card => {
-                originalProducts.push({
-                    element: card,
-                    name: card.dataset.productName,
-                    price: parseFloat(card.dataset.productPrice),
-                    brand: card.dataset.productBrand,
-                    description: card.dataset.productDescription
-                });
+            productCards.forEach((card, index) => {
+                if (originalProducts[index]) {
+                    originalProducts[index].element = card;
+                }
             });
             updateResultsInfo();
         });
@@ -498,13 +548,10 @@
         }
 
         async function performSearch(searchTerm) {
-            currentSearchTerm = searchTerm;
+            currentSearchTerm = searchTerm.toLowerCase(); // Convert to lowercase once
             const spinner = document.getElementById('search-spinner');
-            const productsGrid = document.getElementById('products-grid');
-            const noResults = document.getElementById('no-results');
 
             if (searchTerm === '') {
-                // Show all products if search is empty
                 showAllProducts();
                 applyPriceFilter();
                 return;
@@ -513,13 +560,11 @@
             isSearching = true;
             spinner.style.display = 'block';
 
-
-            performClientSideSearch(searchTerm);
+            performClientSideSearch(currentSearchTerm);
 
             spinner.style.display = 'none';
             isSearching = false;
             updateResultsInfo();
-
         }
 
         function displaySearchResults(products) {
@@ -561,8 +606,8 @@
                     ${retail.product.product_image ? 
                         `<img src="${retail.product.product_image}" alt="${retail.product.name}" class="w-full h-48 object-cover">` :
                         `<div class="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                                                                                                                                                                                                                                                    <i class="fas fa-image text-4xl text-gray-400"></i>
-                                                                                                                                                                                                                                                                </div>`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <i class="fas fa-image text-4xl text-gray-400"></i>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            </div>`
                     }
                     ${!retail.product.in_stock ? 
                         `<div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">Out of Stock</div>` : ''
@@ -586,12 +631,12 @@
                         </button>
                         ${retail.product.in_stock ?
                             `<button onclick="addToCart(${JSON.stringify(retail).replace(/"/g, '&quot;')})"
-                                                                                                                                                                                                                                                                        class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg transition-colors text-sm">
-                                                                                                                                                                                                                                                                        <i class="fas fa-plus mr-1"></i> Add
-                                                                                                                                                                                                                                                                    </button>` :
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg transition-colors text-sm">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="fas fa-plus mr-1"></i> Add
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </button>` :
                             `<button disabled class="flex-1 bg-gray-300 text-gray-500 py-2 px-3 rounded-lg text-sm cursor-not-allowed">
-                                                                                                                                                                                                                                                                        <i class="fas fa-ban mr-1"></i> Unavailable
-                                                                                                                                                                                                                                                                    </button>`
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="fas fa-ban mr-1"></i> Unavailable
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </button>`
                         }
                     </div>
                 </div>
@@ -600,34 +645,30 @@
             return card;
         }
 
-        function performClientSideSearch(searchTerm) {
-            const searchTermLower = searchTerm.toLowerCase();
+
+        function performClientSideSearch(searchStr) {
             let visibleCount = 0;
 
-            const isMatch = (product, searchTermLower) => {
-                return (
-                    product.name?.toLowerCase().includes(searchTermLower) ||
-                    product.description?.toLowerCase().includes(searchTermLower) ||
-                    product.product_code?.toLowerCase().includes(searchTermLower) ||
-                    product.brand_name?.toLowerCase().includes(searchTermLower) ||
-                    (product.tags || []).some(tag =>
-                        tag.name?.toLowerCase().includes(searchTermLower)
-                    ) ||
-                    (product.categories || []).some(category =>
-                        category.name?.toLowerCase().includes(searchTermLower)
-                    )
-                );
-            };
-
             originalProducts.forEach(product => {
-                if (isMatch(product, searchTermLower)) {
-                    product.element.style.display = 'block';
-                    visibleCount++;
-                } else {
-                    product.element.style.display = 'none';
+                // Check if any of the product fields match the search term
+                const isMatch = (
+                    (product.name && product.name.includes(searchStr)) ||
+                    (product.description && product.description.includes(searchStr)) ||
+                    (product.brand && product.brand.includes(searchStr)) ||
+                    (product.product_code && product.product_code.includes(searchStr)) ||
+                    (product.categories && product.categories.some(category => category.includes(searchStr))) ||
+                    (product.tags && product.tags.some(tag => tag.includes(searchStr)))
+                );
+
+                if (product.element) {
+                    if (isMatch) {
+                        product.element.style.display = 'block';
+                        visibleCount++;
+                    } else {
+                        product.element.style.display = 'none';
+                    }
                 }
             });
-
 
             const noResults = document.getElementById('no-results');
             const productsContainer = document.getElementById('products-container');
@@ -637,19 +678,29 @@
             } else {
                 noResults.style.display = 'none';
                 productsContainer.style.display = 'block';
-                applyPriceFilter();
             }
         }
 
+        // function showAllProducts() {
+        //     originalProducts.forEach(product => {
+        //         product.element.style.display = 'block';
+        //     });
+
+        //     // Clear search results if any
+        //     const productsGrid = document.getElementById('products-grid');
+        //     const searchResults = productsGrid.querySelectorAll('.product-card:not([data-product-name])');
+        //     searchResults.forEach(card => card.remove());
+
+        //     document.getElementById('no-results').style.display = 'none';
+        //     document.getElementById('products-container').style.display = 'block';
+        // }
+
         function showAllProducts() {
             originalProducts.forEach(product => {
-                product.element.style.display = 'block';
+                if (product.element) {
+                    product.element.style.display = 'block';
+                }
             });
-
-            // Clear search results if any
-            const productsGrid = document.getElementById('products-grid');
-            const searchResults = productsGrid.querySelectorAll('.product-card:not([data-product-name])');
-            searchResults.forEach(card => card.remove());
 
             document.getElementById('no-results').style.display = 'none';
             document.getElementById('products-container').style.display = 'block';
@@ -659,25 +710,54 @@
             document.getElementById('no-results').style.display = 'block';
             document.getElementById('products-container').style.display = 'none';
         }
-
         // Price filter functionality
+        // function applyPriceFilter() {
+        //     const minPrice = parseFloat(document.getElementById('min-price').value) || 0;
+        //     const maxPrice = parseFloat(document.getElementById('max-price').value) || Infinity;
+
+        //     const allCards = document.querySelectorAll('.product-card');
+        //     let visibleCount = 0;
+
+        //     allCards.forEach(card => {
+        //         if (card.style.display === 'none') return; // Skip already hidden cards
+
+        //         const price = parseFloat(card.dataset.productPrice);
+
+        //         if (price >= minPrice && price <= maxPrice) {
+        //             card.style.display = 'block';
+        //             visibleCount++;
+        //         } else {
+        //             card.style.display = 'none';
+        //         }
+        //     });
+
+        //     const noResults = document.getElementById('no-results');
+        //     const productsContainer = document.getElementById('products-container');
+
+        //     if (visibleCount === 0) {
+        //         showNoResults();
+        //     } else {
+        //         noResults.style.display = 'none';
+        //         productsContainer.style.display = 'block';
+        //     }
+
+        //     updateResultsInfo();
+        // }
+
         function applyPriceFilter() {
             const minPrice = parseFloat(document.getElementById('min-price').value) || 0;
             const maxPrice = parseFloat(document.getElementById('max-price').value) || Infinity;
 
-            const allCards = document.querySelectorAll('.product-card');
             let visibleCount = 0;
 
-            allCards.forEach(card => {
-                if (card.style.display === 'none') return; // Skip already hidden cards
+            originalProducts.forEach(product => {
+                if (!product.element) return;
 
-                const price = parseFloat(card.dataset.productPrice);
-
-                if (price >= minPrice && price <= maxPrice) {
-                    card.style.display = 'block';
+                if (product.price >= minPrice && product.price <= maxPrice) {
+                    product.element.style.display = 'block';
                     visibleCount++;
                 } else {
-                    card.style.display = 'none';
+                    product.element.style.display = 'none';
                 }
             });
 
@@ -764,7 +844,8 @@
             const cartTotal = document.getElementById('cart-total');
 
             const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-            const totalPrice = cart.reduce((sum, item) => sum + ((parseFloat(item.gain) + parseFloat(item.product.price)) *
+            const totalPrice = cart.reduce((sum, item) => sum + ((parseFloat(item.gain) + parseFloat(item.product
+                    .price)) *
                 item.quantity), 0);
 
             cartCount.textContent = totalItems;
@@ -841,11 +922,11 @@
                                 <span class="fs-4 fw-bold text-primary">₦${finalPrice.toLocaleString()}</span>
                             </div>
                             ${retail.product.brand_name ? `
-                                                                                                                                                                                                                                                                                                        <div class="d-flex justify-content-between mb-3">
-                                                                                                                                                                                                                                                                                                            <span class="fw-medium">Brand:</span>
-                                                                                                                                                                                                                                                                                                            <span>${retail.product.brand_name}</span>
-                                                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                                                    ` : ''}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <div class="d-flex justify-content-between mb-3">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <span class="fw-medium">Brand:</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        <span>${retail.product.brand_name}</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ` : ''}
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="fw-medium">Product Code:</span>
                                 <span>${retail.product.product_code || 'N/A'}</span>
@@ -859,14 +940,14 @@
                         </div>
                         
                         ${retail.product.in_stock ? `
-                                                                                                                                                                                                                                                                                                    <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
-                                                                                                                                                                                                                                                                                                        <i class="fas fa-cart-plus me-2"></i> Add to Cart
-                                                                                                                                                                                                                                                                                                    </button>
-                                                                                                                                                                                                                                                                                                ` : `
-                                                                                                                                                                                                                                                                                                    <button disabled class="btn btn-secondary btn-lg w-100">
-                                                                                                                                                                                                                                                                                                        <i class="fas fa-ban me-2"></i> Out of Stock
-                                                                                                                                                                                                                                                                                                    </button>
-                                                                                                                                                                                                                                                                                                `}
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ` : `
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <button disabled class="btn btn-secondary btn-lg w-100">
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="fas fa-ban me-2"></i> Out of Stock
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                </button>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            `}
                     </div>
                 </div>
             `;
@@ -904,7 +985,8 @@
 
 
 
-            const totalPrice = cart.reduce((sum, item) => sum + ((parseFloat(item.gain) + parseFloat(item.product.price)) *
+            const totalPrice = cart.reduce((sum, item) => sum + ((parseFloat(item.gain) + parseFloat(item.product
+                    .price)) *
                 item.quantity), 0) + dispatchFee;
 
 
@@ -924,6 +1006,157 @@
             checkoutTotal.textContent = `₦${totalPrice.toLocaleString()}`;
         }
 
+        // async function processOrder() {
+        //     const form = document.getElementById('checkoutForm');
+
+        //     // Get form data
+        //     const customerName = document.getElementById('customerName').value.trim();
+        //     const customerEmail = document.getElementById('customerEmail').value.trim();
+        //     const customerPhone = document.getElementById('customerPhone').value.trim();
+        //     const customerCity = document.getElementById('customerCity').value.trim();
+        //     const customerAddress = document.getElementById('customerAddress').value.trim();
+        //     const orderNotes = document.getElementById('orderNotes').value.trim();
+
+        //     // Reset previous validation states
+        //     form.classList.remove('was-validated');
+
+        //     // Validate required fields
+        //     let isValid = true;
+
+        //     if (!customerName) {
+        //         document.getElementById('customerName').classList.add('is-invalid');
+        //         isValid = false;
+        //     } else {
+        //         document.getElementById('customerName').classList.remove('is-invalid');
+        //     }
+
+        //     if (!customerEmail || !isValidEmail(customerEmail)) {
+        //         document.getElementById('customerEmail').classList.add('is-invalid');
+        //         isValid = false;
+        //     } else {
+        //         document.getElementById('customerEmail').classList.remove('is-invalid');
+        //     }
+
+        //     if (!customerPhone) {
+        //         document.getElementById('customerPhone').classList.add('is-invalid');
+        //         isValid = false;
+        //     } else {
+        //         document.getElementById('customerPhone').classList.remove('is-invalid');
+        //     }
+
+        //     if (!customerAddress) {
+        //         document.getElementById('customerAddress').classList.add('is-invalid');
+        //         isValid = false;
+        //     } else {
+        //         document.getElementById('customerAddress').classList.remove('is-invalid');
+        //     }
+
+        //     if (!isValid) {
+        //         form.classList.add('was-validated');
+        //         showNotification('Please fill in all required fields correctly.', 'error');
+        //         return;
+        //     }
+
+        //     try {
+        //         // Calculate total
+        //         const total = cart.reduce((sum, item) => {
+        //             return sum + ((parseFloat(item.gain) + parseFloat(item.product.price)) * item.quantity);
+        //         }, 0) + dispatchFee;
+
+        //         // Prepare customer payload
+        //         const customerPayload = {
+        //             user_id: user_id.textContent,
+        //             name: customerName,
+        //             email: customerEmail,
+        //             phone_no: customerPhone,
+        //             city: customerCity,
+        //             address: customerAddress,
+        //             note: orderNotes
+        //         };
+
+        //         // Save customer
+        //         const customerResponse = await fetch('/api/customers', {
+        //             method: 'POST',
+        //             credentials: 'include',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //                 'accept': 'application/json',
+        //                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+        //                     'content')
+        //             },
+        //             body: JSON.stringify(customerPayload)
+        //         });
+
+        //         const customerData = await customerResponse.json();
+
+        //         if (!customerResponse.ok) {
+        //             throw new Error(customerData.message || 'Failed to create customer');
+        //         }
+
+        //         const customerId = customerData.customer?.id || customerData.id;
+
+        //         // Prepare order payload
+        //         const orderData = {
+        //             user_id: user_id.textContent,
+        //             quantity: cart.map(item => item.quantity),
+        //             amount: total,
+        //             address: customerAddress,
+        //             product_id: cart.map(item => item.product.id),
+        //             retail_id: cart.map(item => item.id),
+        //             type: 'customer_purchase',
+        //             payment_method: 'paystack',
+        //             reference: 'hshkjdkjd',
+        //             customer_id: customerId
+        //         };
+
+        //         // Send order
+        //         const orderResponse = await fetch('/api/orders', {
+        //             method: 'POST',
+        //             credentials: 'include',
+        //             headers: {
+        //                 'Content-Type': 'application/json',
+        //                 'accept': 'application/json',
+        //                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute(
+        //                     'content')
+        //             },
+        //             body: JSON.stringify(orderData)
+        //         });
+
+        //         const orderResult = await orderResponse.json();
+
+        //         if (!orderResponse.ok) {
+        //             throw new Error(orderResult.message || 'Order failed');
+        //         }
+
+        //         // Success
+        //         showNotification(orderResult.message || 'Order placed successfully', 'success');
+
+        //         // Clear cart
+        //         cart = [];
+        //         updateCartUI();
+
+        //         // Close modal
+        //         const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
+        //         if (checkoutModal) checkoutModal.hide();
+
+        //         if (isCartOpen) toggleCart();
+
+        //         // Reset form
+        //         form.reset();
+        //         form.classList.remove('was-validated');
+
+        //     } catch (error) {
+        //         console.error('Order error:', error);
+        //         showNotification(error.message || 'An error occurred.', 'error');
+        //     }
+        // }
+
+
+
+        function generateReference() {
+            return 'PS_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+        }
+
         async function processOrder() {
             const form = document.getElementById('checkoutForm');
 
@@ -937,10 +1170,9 @@
 
             // Reset previous validation states
             form.classList.remove('was-validated');
-
-            // Validate required fields
             let isValid = true;
 
+            // Validate fields
             if (!customerName) {
                 document.getElementById('customerName').classList.add('is-invalid');
                 isValid = false;
@@ -981,7 +1213,7 @@
                     return sum + ((parseFloat(item.gain) + parseFloat(item.product.price)) * item.quantity);
                 }, 0) + dispatchFee;
 
-                // Prepare customer payload
+                // Save customer first
                 const customerPayload = {
                     user_id: user_id.textContent,
                     name: customerName,
@@ -992,7 +1224,6 @@
                     note: orderNotes
                 };
 
-                // Save customer
                 const customerResponse = await fetch('/api/customers', {
                     method: 'POST',
                     credentials: 'include',
@@ -1006,28 +1237,64 @@
                 });
 
                 const customerData = await customerResponse.json();
-
-                if (!customerResponse.ok) {
-                    throw new Error(customerData.message || 'Failed to create customer');
-                }
-
+                if (!customerResponse.ok) throw new Error(customerData.message || 'Failed to create customer');
                 const customerId = customerData.customer?.id || customerData.id;
 
-                // Prepare order payload
+                // Paystack popup
+                const paystackHandler = PaystackPop.setup({
+                    key: paystackPublicKey,
+                    email: customerEmail,
+                    amount: Math.round(total * 100), // NGN to kobo
+                    currency: 'NGN',
+                    ref: generateReference(),
+                    firstname: customerName.split(' ')[0],
+                    lastname: customerName.split(' ')[1] || '',
+                    metadata: {
+                        custom_fields: [{
+                                display_name: "Mobile Number",
+                                variable_name: "mobile_number",
+                                value: customerPhone
+                            },
+                            {
+                                display_name: "Delivery Address",
+                                variable_name: "delivery_address",
+                                value: customerAddress
+                            }
+                        ]
+                    },
+                    callback: function(response) {
+                        console.log("Payment complete!", response);
+                        processPayment(response, customerId, form);
+                    },
+                    onClose: function() {
+                        showNotification('Payment window was closed. Please try again.', 'warning');
+                    }
+                });
+
+                paystackHandler.openIframe(); // Open popup modal
+
+            } catch (error) {
+                console.error('Checkout error:', error);
+                showNotification(error.message || 'An error occurred during checkout.', 'error');
+            }
+        }
+
+        async function processPayment(response, customerId, form) {
+            try {
                 const orderData = {
                     user_id: user_id.textContent,
                     quantity: cart.map(item => item.quantity),
-                    amount: total,
-                    address: customerAddress,
+                    amount: cart.reduce((sum, item) => sum + ((parseFloat(item.gain) + parseFloat(item.product
+                        .price)) * item.quantity), 0) + dispatchFee,
+                    address: document.getElementById('customerAddress').value.trim(),
                     product_id: cart.map(item => item.product.id),
                     retail_id: cart.map(item => item.id),
                     type: 'customer_purchase',
                     payment_method: 'paystack',
-                    reference: 'hshkjdkjd',
+                    reference: response.reference,
                     customer_id: customerId
                 };
 
-                // Send order
                 const orderResponse = await fetch('/api/orders', {
                     method: 'POST',
                     credentials: 'include',
@@ -1041,34 +1308,24 @@
                 });
 
                 const orderResult = await orderResponse.json();
+                if (!orderResponse.ok) throw new Error(orderResult.message || 'Order failed');
 
-                if (!orderResponse.ok) {
-                    throw new Error(orderResult.message || 'Order failed');
-                }
-
-                // Success
-                showNotification(orderResult.message || 'Order placed successfully', 'success');
-
-                // Clear cart
+                showNotification('Payment successful! Order placed successfully', 'success');
                 cart = [];
                 updateCartUI();
 
-                // Close modal
                 const checkoutModal = bootstrap.Modal.getInstance(document.getElementById('checkoutModal'));
                 if (checkoutModal) checkoutModal.hide();
-
                 if (isCartOpen) toggleCart();
 
-                // Reset form
                 form.reset();
                 form.classList.remove('was-validated');
 
             } catch (error) {
                 console.error('Order error:', error);
-                showNotification(error.message || 'An error occurred.', 'error');
+                showNotification(error.message || 'An error occurred while processing your order.', 'error');
             }
         }
-
 
         function isValidEmail(email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
