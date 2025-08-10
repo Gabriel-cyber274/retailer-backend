@@ -146,7 +146,7 @@
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center space-x-4">
                     <h1 class="text-2xl font-bold text-gray-800">{{ $user->shop_name ?? 'Shop' }}</h1>
-                    <span class="text-sm text-gray-500">by {{ $user->name }}</span>
+                    {{-- <span class="text-sm text-gray-500">by {{ $user->name }}</span> --}}
                 </div>
                 <button onclick="toggleCart()"
                     class="relative bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -783,11 +783,11 @@
                                 <span class="fs-4 fw-bold text-primary">₦${finalPrice.toLocaleString()}</span>
                             </div>
                             ${retail.product.brand_name ? `
-                                                    <div class="d-flex justify-content-between mb-3">
-                                                        <span class="fw-medium">Brand:</span>
-                                                        <span>${retail.product.brand_name}</span>
-                                                    </div>
-                                                ` : ''}
+                                                                    <div class="d-flex justify-content-between mb-3">
+                                                                        <span class="fw-medium">Brand:</span>
+                                                                        <span>${retail.product.brand_name}</span>
+                                                                    </div>
+                                                                ` : ''}
                             <div class="d-flex justify-content-between mb-3">
                                 <span class="fw-medium">Product Code:</span>
                                 <span>${retail.product.product_code || 'N/A'}</span>
@@ -801,14 +801,14 @@
                         </div>
                         
                         ${retail.product.in_stock ? `
-                                                <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
-                                                    <i class="fas fa-cart-plus me-2"></i> Add to Cart
-                                                </button>
-                                            ` : `
-                                                <button disabled class="btn btn-secondary btn-lg w-100">
-                                                    <i class="fas fa-ban me-2"></i> Out of Stock
-                                                </button>
-                                            `}
+                                                                <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
+                                                                    <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                                                                </button>
+                                                            ` : `
+                                                                <button disabled class="btn btn-secondary btn-lg w-100">
+                                                                    <i class="fas fa-ban me-2"></i> Out of Stock
+                                                                </button>
+                                                            `}
                     </div>
                 </div>
             `;

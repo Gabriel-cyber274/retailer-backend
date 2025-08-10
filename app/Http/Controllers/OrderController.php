@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderCreatedMail;
 use App\Models\Deposit;
 use App\Models\Order;
 use App\Models\retailProduct;
@@ -13,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
@@ -372,6 +374,8 @@ class OrderController extends Controller
             }
 
 
+
+
             $order = Order::create([
                 'user_id' => $request->user_id,
                 'amount' => $request->amount,
@@ -383,6 +387,23 @@ class OrderController extends Controller
                 'customer_id' => $request->customer_id,
                 'state_id' => $request->state_id ?? null
             ]);
+
+
+            if ($user && !empty($user->email)) {
+                Mail::to($user->email)->queue(new OrderCreatedMail($order, 'user'));
+            }
+
+            Mail::to('admin@email.com')
+                ->queue(new OrderCreatedMail($order, 'admin'));
+
+            if (
+                $request->type === 'customer_purchase'
+                && $order->customer
+                && !empty($order->customer->email)
+            ) {
+                Mail::to($order->customer->email)
+                    ->queue(new OrderCreatedMail($order, 'customer'));
+            }
 
             // Attach products with quantity
             foreach ($request->product_id as $index => $productId) {
