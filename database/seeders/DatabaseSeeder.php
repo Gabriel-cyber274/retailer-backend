@@ -30,7 +30,7 @@ class DatabaseSeeder extends Seeder
             CustomerSeeder::class,
             // DepositSeeder::class,
             CategoryRetailProductSeeder::class,
-
+            StateSeeder::class,
         ]);
     }
 }

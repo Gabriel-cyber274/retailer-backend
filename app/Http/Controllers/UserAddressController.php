@@ -10,7 +10,7 @@ class UserAddressController extends Controller
 {
     public function index()
     {
-        $addresses = UserAddress::where('user_id', Auth::id())
+        $addresses = UserAddress::with('state')->where('user_id', Auth::id())
             ->orderByDesc('is_default')
             ->latest()
             ->get();
@@ -28,6 +28,7 @@ class UserAddressController extends Controller
             'nickname' => 'required|string|max:255',
             'fullAddress' => 'required|string',
             'is_default' => 'boolean',
+            'state_id' => 'nullable|exists:states,id',
         ]);
 
         // Check if the nickname already exists for the user
@@ -45,12 +46,14 @@ class UserAddressController extends Controller
             $existingAddress->update([
                 'fullAddress' => $validated['fullAddress'],
                 'is_default' => $validated['is_default'] ?? false,
+                'state_id' => $validated['state_id'] ?? null,
             ]);
             $address = $existingAddress;
         } else {
             // Create new address
             $address = UserAddress::create([
                 'user_id' => Auth::id(),
+                'state_id' => $validated['state_id'] ?? null,
                 'nickname' => $validated['nickname'],
                 'fullAddress' => $validated['fullAddress'],
                 'is_default' => $validated['is_default'] ?? false,
@@ -84,6 +87,7 @@ class UserAddressController extends Controller
             'nickname' => 'nullable|string|max:255',
             'fullAddress' => 'required|string',
             'is_default' => 'boolean',
+            'state_id' => 'nullable|exists:states,id',
         ]);
 
         if ($validated['is_default'] ?? false) {
@@ -94,6 +98,7 @@ class UserAddressController extends Controller
             'nickname' => $validated['nickname'] ?? $userAddress->nickname,
             'fullAddress' => $validated['fullAddress'],
             'is_default' => $validated['is_default'] ?? false,
+            'state_id' => $validated['state_id'] ?? null,
         ]);
 
         return response()->json([

@@ -14,7 +14,7 @@ class CustomerController extends Controller
     public function index()
     {
         $userId = auth()->id();
-        $customers = Customer::where('user_id', $userId)->get();
+        $customers = Customer::with('state')->where('user_id', $userId)->get();
 
 
         $response = [
@@ -34,7 +34,8 @@ class CustomerController extends Controller
             'email' => 'required|string',
             'phone_no' => 'required',
             'address' => 'required',
-            'note' => 'nullable'
+            'note' => 'nullable',
+            'state_id' => 'nullable|exists:states,id'
         ]);
 
         if ($fields->fails()) {
@@ -66,7 +67,8 @@ class CustomerController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'phone_no' => $request->phone_no,
-            'note' => $request->note
+            'note' => $request->note,
+            'state_id' => $request->state_id ?? null
         ]);
 
 

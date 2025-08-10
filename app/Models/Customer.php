@@ -15,9 +15,15 @@ class Customer extends Model
         'name',
         'email',
         'phone_no',
-        'note'
+        'note',
+        'state_id'
     ];
 
+
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
 
     public function user()
     {

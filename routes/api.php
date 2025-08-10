@@ -10,6 +10,7 @@ use App\Http\Controllers\ProductReviewController;
 use App\Http\Controllers\ProductTagsController;
 use App\Http\Controllers\RetailProductController;
 use App\Http\Controllers\SavedProductController;
+use App\Http\Controllers\StateController;
 use App\Http\Controllers\UserAddressController;
 use App\Http\Controllers\UserCartController;
 use App\Http\Controllers\UserController;
@@ -58,6 +59,9 @@ Route::post('/resend-verification', [UserController::class, 'resendVerificationC
 Route::post('/verify-account', [UserController::class, 'verifyUser']);
 
 Route::post('/reset-password', [UserController::class, 'resetPassword']);
+
+
+Route::apiResource('states', StateController::class);
 
 
 
@@ -162,7 +166,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::get('/orders-direct', [OrderController::class, 'directOrders']);
     Route::get('/orders-customer', [OrderController::class, 'customerOrders']);
 
-    
+
     Route::get('/orders/{id}', [OrderController::class, 'show']);
     Route::post('/orders/{id}', [OrderController::class, 'update']);
     Route::delete('/orders/{id}', [OrderController::class, 'destroy']);

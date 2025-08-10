@@ -325,6 +325,7 @@ class OrderController extends Controller
             'type' => 'required|in:direct_purchase,customer_purchase',
             'reference' => 'nullable|string',
             'payment_method' => 'required|in:paystack,shop_balance',
+            'state_id' => 'nullable|exists:states,id'
         ]);
 
         if ($fields->fails()) {
@@ -380,6 +381,7 @@ class OrderController extends Controller
                 'payment_method' => $request->payment_method,
                 'reference' => $request->reference,
                 'customer_id' => $request->customer_id,
+                'state_id' => $request->state_id ?? null
             ]);
 
             // Attach products with quantity

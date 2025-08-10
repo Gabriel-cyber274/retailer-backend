@@ -10,6 +10,7 @@ class UserAddress extends Model
         'user_id',
         'nickname',
         'fullAddress',
+        'state_id',
         'is_default',
     ];
 
@@ -18,6 +19,11 @@ class UserAddress extends Model
         return [
             'is_default' => 'bool'
         ];
+    }
+
+    public function state()
+    {
+        return $this->belongsTo(State::class);
     }
 
     public function user()

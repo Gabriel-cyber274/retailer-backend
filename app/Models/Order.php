@@ -21,8 +21,14 @@ class Order extends Model
         'reference',
         'customer_id',
         'payment_method',
-        'dispatch_number'
+        'dispatch_number',
+        'state_id',
     ];
+
+    public function state()
+    {
+        return $this->belongsTo(State::class);
+    }
 
     public function user()
     {
