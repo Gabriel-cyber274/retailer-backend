@@ -361,8 +361,6 @@ class OrderController extends Controller
                     ->get("https://api.paystack.co/transaction/verify/{$request->reference}");
 
 
-                Log::info('Paystack verification response: ', ['response' => $response->json()]);
-
                 if (!$response->successful() || !isset($response['data']['status']) || $response['data']['status'] !== 'success') {
                     DB::rollBack();
                     return response()->json([
