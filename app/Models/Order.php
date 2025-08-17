@@ -23,6 +23,9 @@ class Order extends Model
         'payment_method',
         'dispatch_number',
         'state_id',
+        'dispatch_fee',
+        'original_price',
+        'note'
     ];
 
     public function state()
@@ -34,11 +37,6 @@ class Order extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    // public function product()
-    // {
-    //     return $this->belongsTo(Product::class);
-    // }
 
     public function products()
     {

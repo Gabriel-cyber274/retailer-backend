@@ -72,7 +72,7 @@ class OrdersRelationManager extends RelationManager
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('amount')
-                    ->money()
+                    ->money('ngn')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')

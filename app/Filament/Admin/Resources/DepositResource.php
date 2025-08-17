@@ -1,25 +1,25 @@
 <?php
 
-namespace App\Filament\Admin\Resources\UserResource\RelationManagers;
+namespace App\Filament\Admin\Resources;
 
-use App\Models\Customer;
-use App\Models\RetailProduct;
+use App\Filament\Admin\Resources\DepositResource\Pages;
+use App\Filament\Admin\Resources\DepositResource\RelationManagers;
+use App\Models\Deposit;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\RelationManagers\RelationManager;
+use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class DepositsRelationManager extends RelationManager
+class DepositResource extends Resource
 {
-    protected static string $relationship = 'deposits';
+    protected static ?string $model = Deposit::class;
 
-    protected static ?string $title = 'Deposits';
-    protected static ?string $modelLabel = 'deposit';
+    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
 
-    public function form(Form $form): Form
+    public static function form(Form $form): Form
     {
         return $form
             ->schema([
@@ -48,10 +48,9 @@ class DepositsRelationManager extends RelationManager
             ]);
     }
 
-    public function table(Table $table): Table
+    public static function table(Table $table): Table
     {
         return $table
-            ->recordTitleAttribute('Deposits')
             ->columns([
                 Tables\Columns\TextColumn::make('id')->sortable(),
                 Tables\Columns\TextColumn::make('user.name'),
@@ -66,17 +65,33 @@ class DepositsRelationManager extends RelationManager
             ->filters([
                 //
             ])
-            ->headerActions([
-                Tables\Actions\CreateAction::make(),
-            ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            DepositResource\RelationManagers\UserRelationManager::class,
+            DepositResource\RelationManagers\CustomerRelationManager::class,
+            DepositResource\RelationManagers\OrderRelationManager::class,
+        ];
+    }
+
+    public static function getPages(): array
+    {
+        return [
+            'index' => Pages\ListDeposits::route('/'),
+            'create' => Pages\CreateDeposit::route('/create'),
+            'view' => Pages\ViewDeposit::route('/{record}'),
+            'edit' => Pages\EditDeposit::route('/{record}/edit'),
+        ];
     }
 }

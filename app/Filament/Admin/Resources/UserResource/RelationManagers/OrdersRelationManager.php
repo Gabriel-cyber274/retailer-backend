@@ -14,7 +14,7 @@ class OrdersRelationManager extends RelationManager
 {
     protected static string $relationship = 'orders';
 
-    protected static ?string $title = 'Customer Orders';
+    protected static ?string $title = 'Orders';
 
     protected static ?string $modelLabel = 'order';
 
@@ -22,43 +22,69 @@ class OrdersRelationManager extends RelationManager
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('product_id')
-                    ->label('Product')
-                    ->options(Product::query()->pluck('name', 'id'))
-                    ->searchable()
-                    ->required(),
 
-                Forms\Components\Select::make('deposit_id')
-                    ->label('Deposit')
-                    ->options(Deposit::query()->pluck('id', 'id'))
-                    ->searchable(),
+                Forms\Components\Select::make('customer_id')
+                    ->relationship('customer', 'name')
+                    ->label('Customer')
+                    ->nullable(),
+
+                Forms\Components\Select::make('products')
+                    ->multiple()
+                    ->relationship('products', 'name')
+                    ->label('Products'),
+
+                Forms\Components\Select::make('resells')
+                    ->multiple()
+                    ->relationship('resells', 'id')
+                    ->label('Resell Products'),
 
                 Forms\Components\TextInput::make('amount')
+                    ->required()
                     ->numeric()
-                    ->required(),
+                    ->label('Amount'),
 
-                Forms\Components\TextInput::make('quantity')
-                    ->numeric()
-                    ->required(),
+                Forms\Components\TextInput::make('address')
+                    ->required()
+                    ->label('Address'),
 
                 Forms\Components\Select::make('status')
                     ->options([
                         'pending' => 'Pending',
-                        'processing' => 'Processing',
                         'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'canceled' => 'Canceled',
                     ])
+                    ->label('Status')
                     ->required(),
 
                 Forms\Components\Select::make('type')
                     ->options([
-                        'standard' => 'Standard',
-                        'express' => 'Express',
-                        'premium' => 'Premium',
-                    ]),
+                        'sale' => 'Sale',
+                        'refund' => 'Refund',
+                    ])
+                    ->label('Order Type')
+                    ->required(),
 
-                Forms\Components\Textarea::make('address')
-                    ->columnSpanFull(),
+                Forms\Components\TextInput::make('reference')
+                    ->label('Reference')
+                    ->nullable(),
+
+                Forms\Components\TextInput::make('dispatch_number')
+                    ->label('Dispatch Number')
+                    ->nullable(),
+
+                Forms\Components\TextInput::make('dispatch_fee')
+                    ->numeric()
+                    ->label('Dispatch Fee')
+                    ->nullable(),
+
+                Forms\Components\TextInput::make('original_price')
+                    ->numeric()
+                    ->label('Original Price')
+                    ->nullable(),
+
+                Forms\Components\Textarea::make('note')
+                    ->label('Note')
+                    ->nullable(),
             ]);
     }
 
@@ -67,59 +93,42 @@ class OrdersRelationManager extends RelationManager
         return $table
             ->recordTitleAttribute('Order')
             ->columns([
-                Tables\Columns\TextColumn::make('product.name')
-                    ->label('Product')
-                    ->searchable()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('amount')
-                    ->money()
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('quantity')
-                    ->sortable(),
-
-                Tables\Columns\TextColumn::make('status')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'pending' => 'warning',
-                        'processing' => 'info',
-                        'completed' => 'success',
-                        'cancelled' => 'danger',
-                        default => 'gray',
-                    }),
-
-                Tables\Columns\TextColumn::make('type')
-                    ->badge()
-                    ->color(fn(string $state): string => match ($state) {
-                        'express' => 'info',
-                        'premium' => 'primary',
-                        default => 'gray',
-                    }),
-
-                Tables\Columns\TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('user.name')->label('User'),
+                Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable(),
+                Tables\Columns\TextColumn::make('amount')->label('Amount')->money('ngn')->sortable(),
+                Tables\Columns\TextColumn::make('status')->badge(),
+                Tables\Columns\TextColumn::make('type')->label('Order Type'),
+                Tables\Columns\TextColumn::make('created_at')->label('Created At')->dateTime()->sortable(),
             ])
             ->filters([
+                // Filter by status
                 Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
                     ->options([
                         'pending' => 'Pending',
-                        'processing' => 'Processing',
                         'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'canceled' => 'Canceled',
                     ]),
 
+                // Filter by type
                 Tables\Filters\SelectFilter::make('type')
+                    ->label('Order Type')
                     ->options([
-                        'standard' => 'Standard',
-                        'express' => 'Express',
-                        'premium' => 'Premium',
+
+                        'customer_purchase' => 'customer purchase',
+                        'direct_purchase' => 'direct purchase',
                     ]),
 
-                Tables\Filters\Filter::make('has_deposit')
-                    ->label('Has Deposit')
-                    ->query(fn(Builder $query): Builder => $query->whereNotNull('deposit_id')),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        Forms\Components\DatePicker::make('from')->label('From'),
+                        Forms\Components\DatePicker::make('until')->label('Until'),
+                    ])
+                    ->query(function ($query, array $data) {
+                        return $query
+                            ->when($data['from'], fn($q, $date) => $q->whereDate('created_at', '>=', $date))
+                            ->when($data['until'], fn($q, $date) => $q->whereDate('created_at', '<=', $date));
+                    }),
             ])
             ->headerActions([
                 Tables\Actions\CreateAction::make(),

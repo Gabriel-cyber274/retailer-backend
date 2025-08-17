@@ -1,33 +1,23 @@
 <?php
 
-namespace App\Filament\Admin\Resources;
+namespace App\Filament\Admin\Resources\CustomerResource\RelationManagers;
 
-use App\Filament\Admin\Resources\OrderResource\Pages;
-use App\Filament\Admin\Resources\OrderResource\RelationManagers;
-use App\Models\Order;
 use Filament\Forms;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
+use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class OrderResource extends Resource
+class OrdersRelationManager extends RelationManager
 {
-    protected static ?string $model = Order::class;
+    protected static string $relationship = 'Orders';
 
-    protected static ?string $navigationIcon = 'heroicon-o-shopping-cart';
-    protected static ?string $navigationGroup = 'Orders';
-    protected static ?int $navigationSort = 2;
-    protected static ?string $slug = 'orders';
-
-    public static function form(Form $form): Form
+    public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->required()
-                    ->label('User'),
 
                 Forms\Components\Select::make('customer_id')
                     ->relationship('customer', 'name')
@@ -94,9 +84,10 @@ class OrderResource extends Resource
             ]);
     }
 
-    public static function table(Table $table): Table
+    public function table(Table $table): Table
     {
         return $table
+            ->recordTitleAttribute('Order')
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')->label('User'),
                 Tables\Columns\TextColumn::make('customer.name')->label('Customer')->sortable(),
@@ -123,7 +114,6 @@ class OrderResource extends Resource
                         'direct_purchase' => 'direct purchase',
                     ]),
 
-                // Filter by created_at (date range)
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('from')->label('From'),
@@ -135,35 +125,18 @@ class OrderResource extends Resource
                             ->when($data['until'], fn($q, $date) => $q->whereDate('created_at', '<=', $date));
                     }),
             ])
+            ->headerActions([
+                Tables\Actions\CreateAction::make(),
+            ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
-    }
-
-
-    public static function getRelations(): array
-    {
-        return [
-            // If you want to show products or resells as RelationManagers
-            RelationManagers\ProductsRelationManager::class,
-            RelationManagers\ResellsRelationManager::class,
-            RelationManagers\CustomerRelationManager::class,
-        ];
-    }
-
-    public static function getPages(): array
-    {
-        return [
-            'index' => Pages\ListOrders::route('/'),
-            'create' => Pages\CreateOrder::route('/create'),
-            'view' => Pages\ViewOrder::route('/{record}'),
-            'edit' => Pages\EditOrder::route('/{record}/edit'),
-        ];
     }
 }

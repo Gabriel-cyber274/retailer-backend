@@ -34,7 +34,7 @@ class TopResellersTable extends TableWidget
 
                 TextColumn::make('deposits_sum_amount')
                     ->label('Total Deposits')
-                    ->money()
+                    ->money('ngn')
                     ->sortable(),
 
                 TextColumn::make('deposits_count')
@@ -44,7 +44,7 @@ class TopResellersTable extends TableWidget
 
                 TextColumn::make('deposits.highest_deposit')
                     ->label('Highest Deposit')
-                    ->money()
+                    ->money('ngn')
                     ->formatStateUsing(fn($state) => $state ?? 0),
                 TextColumn::make('email')
                     ->searchable(),

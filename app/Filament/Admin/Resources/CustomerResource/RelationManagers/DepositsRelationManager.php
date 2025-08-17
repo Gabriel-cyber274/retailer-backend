@@ -1,23 +1,18 @@
 <?php
 
-namespace App\Filament\Admin\Resources\UserResource\RelationManagers;
+namespace App\Filament\Admin\Resources\CustomerResource\RelationManagers;
 
-use App\Models\Customer;
-use App\Models\RetailProduct;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class DepositsRelationManager extends RelationManager
 {
-    protected static string $relationship = 'deposits';
-
-    protected static ?string $title = 'Deposits';
-    protected static ?string $modelLabel = 'deposit';
+    protected static string $relationship = 'Deposits';
 
     public function form(Form $form): Form
     {

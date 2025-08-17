@@ -34,9 +34,9 @@ class RetailsRelationManager extends RelationManager
                 Forms\Components\TextInput::make('gain')
                     ->numeric()
                     ->required()
-                    ->prefix('$'),
+                    ->prefix('₦'),
 
-                Forms\Components\Select::make('categories')
+                Forms\Components\Select::make('product.categories')
                     ->label('Categories')
                     ->relationship('categories', 'name')
                     ->multiple()
@@ -56,10 +56,10 @@ class RetailsRelationManager extends RelationManager
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('gain')
-                    ->money()
+                    ->money('ngn')
                     ->sortable(),
 
-                Tables\Columns\TextColumn::make('categories.name')
+                Tables\Columns\TextColumn::make('product.categories.name')
                     ->label('Categories')
                     ->badge()
                     ->separator(','),

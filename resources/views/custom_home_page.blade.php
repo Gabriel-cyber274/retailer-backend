@@ -14,6 +14,20 @@
     <script src="https://js.paystack.co/v1/inline.js"></script>
 
     <style>
+        .tag-image-container {
+            width: 100%;
+            height: 100px;
+            /* border-radius: 50%; */
+            overflow: hidden;
+            border: 1px solid #dee2e6;
+        }
+
+        .tag-image-container img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover;
+        }
+
         .product-card {
             transition: all 0.3s ease;
         }
@@ -135,6 +149,27 @@
             padding: 3rem;
             color: #6b7280;
         }
+
+        /* Tag selection styling */
+        #tag-selection .form-check {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            border: 1px solid #dee2e6;
+            width: 200px
+        }
+
+        #tag-selection .form-check-input {
+            margin-top: 0.3em;
+            margin-right: 0.5em;
+        }
+
+        #tag-selection .form-check-label {
+            cursor: pointer;
+            width: 100%;
+        }
     </style>
 </head>
 
@@ -219,7 +254,8 @@
                             data-product-name="{{ strtolower($retail->product->name) }}"
                             data-product-price="{{ $finalPrice }}"
                             data-product-brand="{{ strtolower($retail->product->brand_name ?? '') }}"
-                            data-product-description="{{ strtolower($retail->product->description) }}">
+                            data-product-description="{{ strtolower($retail->product->description) }}"
+                            data-retail-id="{{ $retail->id }}">
                             <div class="relative">
                                 @if ($retail->product->product_image)
                                     <img src="{{ $retail->product->product_image }}" alt="{{ $retail->product->name }}"
@@ -254,13 +290,13 @@
                                 </div>
 
                                 <div class="flex space-x-2">
-                                    <button onclick="viewProduct({{ json_encode($retail) }})" data-bs-toggle="modal"
+                                    <button onclick="viewProduct({{ $retail->id }})" data-bs-toggle="modal"
                                         data-bs-target="#productModal"
                                         class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg transition-colors text-sm">
                                         <i class="fas fa-eye mr-1"></i> View
                                     </button>
                                     @if ($retail->product->in_stock)
-                                        <button onclick="addToCart({{ json_encode($retail) }})"
+                                        <button onclick="addToCartById({{ $retail->id }})"
                                             class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg transition-colors text-sm">
                                             <i class="fas fa-plus mr-1"></i> Add
                                         </button>
@@ -399,12 +435,6 @@
                                     Please provide your delivery address.
                                 </div>
                             </div>
-
-                            <div class="col-12">
-                                <label for="orderNotes" class="form-label">Order Notes (Optional)</label>
-                                <textarea class="form-control" id="orderNotes" rows="2"
-                                    placeholder="Any special instructions for your order..."></textarea>
-                            </div>
                         </div>
                     </form>
                 </div>
@@ -474,32 +504,49 @@
         // Store original products for filtering
         const originalProducts = {!! json_encode(
             $user->retails->map(function ($retail) {
-                $finalPrice = $retail->product->price + $retail->gain;
-                return [
-                    'id' => $retail->id,
-                    'name' => strtolower($retail->product->name),
-                    'price' => $finalPrice,
-                    'brand' => strtolower($retail->product->brand_name ?? ''),
-                    'description' => strtolower($retail->product->description),
-                    'product_code' => $retail->product->product_code ?? '',
-                    'in_stock' => $retail->product->in_stock,
-                    'product_image' => $retail->product->product_image ?? '',
-                    'product' => $retail->product,
-                    'gain' => $retail->gain,
-                    'element' => null,
-                    'categories' => $retail->product->categories
-                        ? $retail->product->categories->pluck('name')->map(function ($category) {
-                                return strtolower($category);
-                            })->toArray()
-                        : [],
-                    'tags' => $retail->product->tags
-                        ? $retail->product->tags->pluck('name')->map(function ($tag) {
-                                return strtolower($tag);
-                            })->toArray()
-                        : [],
-                ];
-            }),
+                    $finalPrice = $retail->product->price + $retail->gain;
+                    return [
+                        'id' => $retail->id,
+                        'name' => strtolower($retail->product->name),
+                        'price' => $finalPrice,
+                        'brand' => strtolower($retail->product->brand_name ?? ''),
+                        'description' => strtolower($retail->product->description),
+                        'product_code' => $retail->product->product_code ?? '',
+                        'in_stock' => $retail->product->in_stock,
+                        'product_image' => $retail->product->product_image ?? '',
+                        'product' => [
+                            'id' => $retail->product->id,
+                            'name' => $retail->product->name,
+                            'description' => $retail->product->description,
+                            'price' => $retail->product->price,
+                            'product_image' => $retail->product->product_image,
+                            'brand_name' => $retail->product->brand_name,
+                            'product_code' => $retail->product->product_code,
+                            'in_stock' => $retail->product->in_stock,
+                        ],
+                        'gain' => $retail->gain,
+                        'element' => null,
+                        'categories' => $retail->product->categories
+                            ? $retail->product->categories->pluck('name')->map(function ($category) {
+                                    return strtolower($category);
+                                })->toArray()
+                            : [],
+                        'tags' => $retail->product->tags
+                            ? $retail->product->tags->map(function ($tag) {
+                                    return [
+                                        'id' => $tag->id,
+                                        'name' => $tag->name,
+                                        'description' => $tag->description,
+                                        'tag_image' => $tag->tag_image,
+                                        'tag_code' => $tag->tag_code,
+                                    ];
+                                })->toArray()
+                            : [],
+                    ];
+                })->toArray(),
         ) !!};
+
+        console.log(originalProducts, 'Products loaded');
 
         // After DOM is loaded, connect the elements to the products
         document.addEventListener('DOMContentLoaded', function() {
@@ -565,7 +612,7 @@
                     (product.brand && product.brand.includes(searchStr)) ||
                     (product.product_code && product.product_code.includes(searchStr)) ||
                     (product.categories && product.categories.some(category => category.includes(searchStr))) ||
-                    (product.tags && product.tags.some(tag => tag.includes(searchStr)))
+                    (product.tags && product.tags.some(tag => tag.name.toLowerCase().includes(searchStr)))
                 );
 
                 if (product.element) {
@@ -665,7 +712,8 @@
 
         // Cart functionality
         function addToCart(retail) {
-            const existingItem = cart.find(item => item.id === retail.id);
+            const existingItem = cart.find(item => item.id === retail.id &&
+                (!item.selectedTag || !retail.selectedTag || item.selectedTag?.id === retail.selectedTag?.id));
 
             if (existingItem) {
                 existingItem.quantity += 1;
@@ -673,12 +721,20 @@
                 cart.push({
                     ...retail,
                     quantity: 1,
-                    finalPrice: retail.product.price + retail.gain
+                    finalPrice: parseFloat(retail.product.price) + parseFloat(retail.gain),
+                    selectedTag: retail.selectedTag || null
                 });
             }
 
             updateCartUI();
             showNotification('Product added to cart!', 'success');
+        }
+
+        function addToCartById(retailId) {
+            const retail = originalProducts.find(p => p.id === retailId);
+            if (retail) {
+                addToCart(retail);
+            }
         }
 
         function removeFromCart(retailId) {
@@ -726,6 +782,7 @@
                              alt="${item.product.name}" class="w-12 h-12 object-cover rounded">
                         <div class="flex-1">
                             <h4 class="font-medium text-sm">${item.product.name}</h4>
+                            ${item.selectedTag ? `<p class="text-xs text-gray-500">Tag: ${item.selectedTag.name}</p>` : ''}
                             <p class="text-blue-600 font-semibold">₦${(parseFloat(item.gain) + parseFloat(item.product.price)).toLocaleString()}</p>
                         </div>
                         <div class="flex items-center space-x-2">
@@ -758,65 +815,117 @@
             }
         }
 
-        function viewProduct(retail) {
+        function viewProduct(retailId) {
+            const retail = originalProducts.find(p => p.id === retailId);
+            if (!retail) {
+                console.error('Product not found');
+                return;
+            }
+
             currentRetail = retail;
             const modalTitle = document.getElementById('productModalLabel');
             const modalContent = document.getElementById('modal-content');
 
             modalTitle.textContent = retail.product.name;
 
-            const finalPrice =
-                (parseFloat(retail.gain) + parseFloat(retail.product.price));
+            const finalPrice = (parseFloat(retail.gain) + parseFloat(retail.product.price));
+
+            // Check if product has tags
+            const hasTags = retail.tags && retail.tags.length > 0;
+
+            let tagsHTML = '';
+            if (hasTags) {
+                tagsHTML = `
+            <div class="mb-4">
+    <label class="fw-medium mb-2">Select Tag:</label>
+    <div class="d-flex flex-wrap gap-3" id="tag-selection">
+        ${retail.tags.map(tag => `
+                                                                                                                    <div class="form-check">
+                                                                                                                        <input class="form-check-input" type="radio" name="productTag" 
+                                                                                                                               id="tag-${tag.id}" value="${tag.id}">
+                                                                                                                        <label class="form-check-label  align-items-center gap-2" for="tag-${tag.id}">
+                                                                                                                            ${tag.tag_image ? `
+                        <div class="tag-image-container">
+                            <img src="${tag.tag_image}" alt="${tag.name}" 
+                                 class=" border" 
+                                 style="width: 28px; height: 28px; object-fit: cover;">
+                        </div>
+                    ` : ''}
+                                                                                                                            <span>${tag.name}</span><br>
+                                                                                                                            <small class="text-muted">${tag.description}</small>
+                                                                                                                        </label>
+                                                                                                                    </div>
+                                                                                                                `).join('')}
+    </div>
+</div>
+        `;
+            }
 
             modalContent.innerHTML = `
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <img src="${retail.product.product_image ? retail.product.product_image : '/placeholder.jpg'}" 
-                             alt="${retail.product.name}" class="img-fluid rounded">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <img src="${retail.product.product_image ? retail.product.product_image : '/placeholder.jpg'}" 
+                     alt="${retail.product.name}" class="img-fluid rounded">
+            </div>
+            <div class="col-md-6">
+                <p class="text-muted mb-4">${retail.product.description}</p>
+                
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-medium">Price:</span>
+                        <span class="fs-4 fw-bold text-primary">₦${finalPrice.toLocaleString()}</span>
                     </div>
-                    <div class="col-md-6">
-                        <p class="text-muted mb-4">${retail.product.description}</p>
-                        
-                        <div class="mb-4">
-                            <div class="d-flex justify-content-between mb-3">
-                                <span class="fw-medium">Price:</span>
-                                <span class="fs-4 fw-bold text-primary">₦${finalPrice.toLocaleString()}</span>
-                            </div>
-                            ${retail.product.brand_name ? `
-                                                                    <div class="d-flex justify-content-between mb-3">
-                                                                        <span class="fw-medium">Brand:</span>
-                                                                        <span>${retail.product.brand_name}</span>
-                                                                    </div>
-                                                                ` : ''}
-                            <div class="d-flex justify-content-between mb-3">
-                                <span class="fw-medium">Product Code:</span>
-                                <span>${retail.product.product_code || 'N/A'}</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-3">
-                                <span class="fw-medium">Availability:</span>
-                                <span class="badge ${retail.product.in_stock ? 'bg-success' : 'bg-danger'}">
-                                    ${retail.product.in_stock ? 'In Stock' : 'Out of Stock'}
-                                </span>
-                            </div>
-                        </div>
-                        
-                        ${retail.product.in_stock ? `
-                                                                <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
-                                                                    <i class="fas fa-cart-plus me-2"></i> Add to Cart
-                                                                </button>
-                                                            ` : `
-                                                                <button disabled class="btn btn-secondary btn-lg w-100">
-                                                                    <i class="fas fa-ban me-2"></i> Out of Stock
-                                                                </button>
-                                                            `}
+                    ${retail.product.brand_name ? `
+                                                                                                                                                <div class="d-flex justify-content-between mb-3">
+                                                                                                                                                    <span class="fw-medium">Brand:</span>
+                                                                                                                                                    <span>${retail.product.brand_name}</span>
+                                                                                                                                                </div>
+                                                                                                                                            ` : ''}
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-medium">Product Code:</span>
+                        <span>${retail.product.product_code || 'N/A'}</span>
                     </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span class="fw-medium">Availability:</span>
+                        <span class="badge ${retail.product.in_stock ? 'bg-success' : 'bg-danger'}">
+                            ${retail.product.in_stock ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                    </div>
+                    ${tagsHTML}
                 </div>
-            `;
+                
+                ${retail.product.in_stock ? `
+                                                                                                                                            <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
+                                                                                                                                                <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                                                                                                                                            </button>
+                                                                                                                                        ` : `
+                                                                                                                                            <button disabled class="btn btn-secondary btn-lg w-100">
+                                                                                                                                                <i class="fas fa-ban me-2"></i> Out of Stock
+                                                                                                                                            </button>
+                                                                                                                                        `}
+            </div>
+        </div>
+    `;
         }
 
         function addToCartFromModal() {
             if (currentRetail) {
-                addToCart(currentRetail);
+                // Get selected tag if available
+                let selectedTag = null;
+                const tagRadio = document.querySelector('input[name="productTag"]:checked');
+                if (tagRadio) {
+                    const tagId = parseInt(tagRadio.value);
+                    // Find the tag object from the current retail's tags
+                    selectedTag = currentRetail.tags.find(tag => tag.id === tagId);
+                }
+
+                // Add tag information to the retail object
+                const retailWithTag = {
+                    ...currentRetail,
+                    selectedTag: selectedTag
+                };
+
+                addToCart(retailWithTag);
                 const modal = bootstrap.Modal.getInstance(document.getElementById('productModal'));
                 modal.hide();
             }
@@ -855,6 +964,7 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <div>
                         <span class="fw-medium">${item.product.name}</span>
+                        ${item.selectedTag ? `<small class="text-muted d-block">Tag: ${item.selectedTag.name}</small>` : ''}
                         <small class="text-muted d-block">Qty: ${item.quantity}</small>
                     </div>
                     <span>₦${((parseFloat(item.gain) + parseFloat(item.product.price)) * item.quantity).toLocaleString()}</span>
@@ -896,7 +1006,6 @@
             const customerPhone = document.getElementById('customerPhone').value.trim();
             const customerState = document.getElementById('customerState').value.trim();
             const customerAddress = document.getElementById('customerAddress').value.trim();
-            const orderNotes = document.getElementById('orderNotes').value.trim();
 
             // Reset previous validation states
             form.classList.remove('was-validated');
@@ -966,7 +1075,6 @@
                     phone_no: customerPhone,
                     state_id: customerState,
                     address: customerAddress,
-                    note: orderNotes
                 };
 
                 const customerResponse = await fetch('/api/customers', {
@@ -1040,6 +1148,18 @@
                 const dispatchFee = (productTotal * dispatchPercentage) / 100;
                 const total = productTotal + dispatchFee;
 
+                const selectedTags = cart
+                    .filter(item => item.selectedTag)
+                    .map(item => item);
+
+                const note = selectedTags.map((item) => {
+                    const productName = item.product.name;
+                    const tagName = item.selectedTag.name;
+                    const quantity = item.quantity;
+                    return `${productName} - ${tagName} (${quantity})`;
+                }).join(", ");
+
+
                 const orderData = {
                     user_id: user_id.textContent,
                     quantity: cart.map(item => item.quantity),
@@ -1047,11 +1167,15 @@
                     address: document.getElementById('customerAddress').value.trim(),
                     product_id: cart.map(item => item.product.id),
                     retail_id: cart.map(item => item.id),
+                    tag_id: cart.map(item => item.selectedTag ? item.selectedTag.id : null),
                     type: 'customer_purchase',
                     payment_method: 'paystack',
                     reference: response.reference,
                     customer_id: customerId,
-                    state_id: customerState
+                    state_id: customerState,
+                    dispatch_fee: dispatchFee,
+                    original_price: productTotal,
+                    note: note
                 };
 
                 const orderResponse = await fetch('/api/orders', {

@@ -10,45 +10,85 @@ class RevenueWidget extends BaseWidget
 {
     protected function getStats(): array
     {
-        // All time revenue
-        $totalAmountAllTime = Order::where('status', 'completed')->sum('amount');
+        // Helper: calculate profit for a given order collection
+        $calculateProfit = function ($orders) {
+            $profit = 0;
 
-        // This month's revenue
-        $startOfMonth = now()->startOfMonth();
-        $endOfMonth = now()->endOfMonth();
-        $totalAmountMonthly = Order::where('status', 'completed')
-            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
-            ->sum('amount');
+            foreach ($orders as $order) {
+                // Resell products
+                foreach ($order->resells as $resell) {
+                    $profit += (($resell->gain + $resell->product->cost_price) - $resell->product->price) * $resell->pivot->quantity;
+                }
 
-        // This week's revenue
-        $startOfWeek = now()->startOfWeek();
-        $endOfWeek = now()->endOfWeek();
-        $totalAmountWeekly = Order::where('status', 'completed')
-            ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
-            ->sum('amount');
+                // Direct products
+                foreach ($order->products as $product) {
+                    $profit += ($product->price - $product->cost_price) * $product->pivot->quantity;
+                }
+            }
 
-        // Today's revenue
-        $startOfDay = now()->startOfDay();
-        $endOfDay = now()->endOfDay();
-        $totalAmountDaily = Order::where('status', 'completed')
-            ->whereBetween('created_at', [$startOfDay, $endOfDay])
-            ->sum('amount');
+            return $profit;
+        };
+
+        // Query scopes
+        $allTimeOrders = Order::with(['products', 'resells'])->where('status', 'completed')->get();
+        $monthlyOrders = Order::with(['products', 'resells'])
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
+            ->get();
+        $weeklyOrders = Order::with(['products', 'resells'])
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+            ->get();
+        $dailyOrders = Order::with(['products', 'resells'])
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [now()->startOfDay(), now()->endOfDay()])
+            ->get();
+
+        // Revenue (sum of order->amount)
+        $totalRevenueAllTime = $allTimeOrders->sum('amount');
+        $totalRevenueMonthly = $monthlyOrders->sum('amount');
+        $totalRevenueWeekly = $weeklyOrders->sum('amount');
+        $totalRevenueDaily = $dailyOrders->sum('amount');
+
+        // Profit (calculated per product/resell)
+        $totalProfitAllTime = $calculateProfit($allTimeOrders);
+        $totalProfitMonthly = $calculateProfit($monthlyOrders);
+        $totalProfitWeekly = $calculateProfit($weeklyOrders);
+        $totalProfitDaily = $calculateProfit($dailyOrders);
 
         return [
-            Stat::make('All Time', $totalAmountAllTime)
-                ->description('Total amount made all time')
+            // Revenue
+            Stat::make('Revenue (All Time)', number_format($totalRevenueAllTime, 2))
+                ->description('Total revenue all time')
                 ->color('primary'),
 
-            Stat::make('This Month', $totalAmountMonthly)
-                ->description('Amount made this month')
+            Stat::make('Revenue (This Month)', number_format($totalRevenueMonthly, 2))
+                ->description('Revenue this month')
                 ->color('success'),
 
-            Stat::make('This Week', $totalAmountWeekly)
-                ->description('Amount made this week')
+            Stat::make('Revenue (This Week)', number_format($totalRevenueWeekly, 2))
+                ->description('Revenue this week')
                 ->color('warning'),
 
-            Stat::make('Today', $totalAmountDaily)
-                ->description('Amount made today')
+            Stat::make('Revenue (Today)', number_format($totalRevenueDaily, 2))
+                ->description('Revenue today')
+                ->color('danger'),
+
+            // Profit
+            Stat::make('Profit (All Time)', number_format($totalProfitAllTime, 2))
+                ->description('Total profit all time')
+                ->color('primary'),
+
+            Stat::make('Profit (This Month)', number_format($totalProfitMonthly, 2))
+                ->description('Profit this month')
+                ->color('success'),
+
+            Stat::make('Profit (This Week)', number_format($totalProfitWeekly, 2))
+                ->description('Profit this week')
+                ->color('warning'),
+
+            Stat::make('Profit (Today)', number_format($totalProfitDaily, 2))
+                ->description('Profit today')
                 ->color('danger'),
         ];
     }

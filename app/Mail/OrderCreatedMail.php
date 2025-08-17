@@ -23,9 +23,20 @@ class OrderCreatedMail extends Mailable implements ShouldQueue
 
     public function build()
     {
-        $subject = $this->recipientType === 'admin'
-            ? "New Order #{$this->order->id} placed"
-            : "Order confirmation — #{$this->order->id}";
+        switch ($this->recipientType) {
+            case 'admin':
+                $subject = "📦 New Order #{$this->order->id} Received";
+                break;
+            case 'customer':
+                $subject = "🧾 Order Receipt — #{$this->order->id}";
+                break;
+            case 'customer_user':
+                $subject = "👥 Your Customer Placed an Order — #{$this->order->id}";
+                break;
+            default:
+                $subject = "✅ Your Order Confirmation — #{$this->order->id}";
+                break;
+        }
 
         return $this->subject($subject)
             ->view('emails.order-created')

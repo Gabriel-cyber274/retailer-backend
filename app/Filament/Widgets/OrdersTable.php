@@ -16,24 +16,51 @@ class OrdersTable extends BaseWidget
     {
         return $table
             ->query(
-                Order::with(['user', 'deposit.resell', 'product'])
+                Order::with(['user', 'products', 'resells'])
                     ->latest()
             )
             ->columns([
                 Tables\Columns\TextColumn::make('id')
                     ->label('Order ID')
-                    ->searchable(),
+                    ->searchable()
+                    ->sortable(),
 
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Customer')
                     ->searchable(),
 
-                Tables\Columns\TextColumn::make('product.name')
-                    ->label('Product')
-                    ->searchable(),
+                Tables\Columns\TextColumn::make('products_summary')
+                    ->label('Products')
+                    ->state(
+                        fn(Order $record) =>
+                        $record->products->pluck('name')->take(3)->join(', ')
+                            . ($record->products->count() > 3 ? '…' : '')
+                    )
+                    ->tooltip(
+                        fn(Order $record) =>
+                        $record->products->pluck('name')->join(', ')
+                    ),
+
+                Tables\Columns\TextColumn::make('resells_summary')
+                    ->label('Resells')
+                    ->state(
+                        fn(Order $record) =>
+                        $record->resells->map(
+                            fn($resell) =>
+                            $resell->product?->name . ' (x' . $resell->pivot->quantity . ')'
+                        )->take(3)->join(', ')
+                            . ($record->resells->count() > 3 ? '…' : '')
+                    )
+                    ->tooltip(
+                        fn(Order $record) =>
+                        $record->resells->map(
+                            fn($resell) =>
+                            $resell->product?->name . ' (x' . $resell->pivot->quantity . ')'
+                        )->join(', ')
+                    ),
 
                 Tables\Columns\TextColumn::make('amount')
-                    ->money()
+                    ->money('ngn')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
@@ -42,6 +69,7 @@ class OrdersTable extends BaseWidget
                         'pending' => 'warning',
                         'completed' => 'success',
                         'cancelled' => 'danger',
+                        default => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('created_at')
@@ -49,7 +77,11 @@ class OrdersTable extends BaseWidget
                     ->sortable(),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(),
+                Tables\Actions\Action::make('view')
+                    ->label('View')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn(Order $record): string => url("/admin/orders/{$record->id}"))
+                    ->openUrlInNewTab(false),
             ])
             ->paginated(10);
     }

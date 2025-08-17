@@ -13,4 +13,7 @@ Route::get('/success', function () {
 
 
 
-Route::get('/{name}/{shop_id}', [CustomeSiteController::class, 'index']);
+Route::get('/shop/{name}/{shop_id}', [CustomeSiteController::class, 'index']);
+
+
+Route::get('/order/{order_id}', [CustomeSiteController::class, 'updateOrder']);

@@ -14,6 +14,13 @@ class ViewOrder extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+            Actions\Action::make('viewFrontend')
+                ->label('Open in Website')
+                ->url(fn($record) => url("/order/{$record->id}"))
+                ->openUrlInNewTab()
+                ->button()
+                ->color('success')
+                ->icon('heroicon-o-link'),
         ];
     }
 }

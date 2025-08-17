@@ -327,7 +327,10 @@ class OrderController extends Controller
             'type' => 'required|in:direct_purchase,customer_purchase',
             'reference' => 'nullable|string',
             'payment_method' => 'required|in:paystack,shop_balance',
-            'state_id' => 'nullable|exists:states,id'
+            'state_id' => 'nullable|exists:states,id',
+            'dispatch_fee' => 'required',
+            'original_price' => 'required',
+            'note' => 'nullable|string',
         ]);
 
         if ($fields->fails()) {
@@ -383,15 +386,20 @@ class OrderController extends Controller
                 'payment_method' => $request->payment_method,
                 'reference' => $request->reference,
                 'customer_id' => $request->customer_id,
-                'state_id' => $request->state_id ?? null
+                'state_id' => $request->state_id ?? null,
+                'dispatch_fee' => $request->dispatch_fee,
+                'original_price' => $request->original_price,
+                'note' => $request->note
             ]);
 
 
-            if ($user && !empty($user->email)) {
+            if ($user && !empty($user->email) && $request->type != 'customer_purchase') {
+                Log::info("📧 Sending user order mail to {$user->email} for order #{$order->id}");
                 Mail::to($user->email)->queue(new OrderCreatedMail($order, 'user'));
             }
 
-            Mail::to('admin@email.com')
+            Log::info("📧 Sending admin order mail for order #{$order->id}");
+            Mail::to('gabrielimoh30@gmail.com')
                 ->queue(new OrderCreatedMail($order, 'admin'));
 
             if (
@@ -399,8 +407,14 @@ class OrderController extends Controller
                 && $order->customer
                 && !empty($order->customer->email)
             ) {
+                Log::info("📧 Sending customer order mail to {$order->customer->email} for order #{$order->id}");
                 Mail::to($order->customer->email)
                     ->queue(new OrderCreatedMail($order, 'customer'));
+
+                if ($user && !empty($user->email)) {
+                    Log::info("📧 Sending customer_user order mail to {$user->email} for order #{$order->id}");
+                    Mail::to($user->email)->queue(new OrderCreatedMail($order, 'customer_user'));
+                }
             }
 
             // Attach products with quantity

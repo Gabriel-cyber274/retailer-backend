@@ -27,6 +27,9 @@ Route::get('/user', function (Request $request) {
 Route::post('/orders', [OrderController::class, 'store']);
 Route::post('/customers', [CustomerController::class, 'store']);
 
+Route::post('/orders/{id}', [OrderController::class, 'update']);
+
+
 
 
 Route::post('/register', [UserController::class, 'Register']);
@@ -168,7 +171,6 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
 
     Route::get('/orders/{id}', [OrderController::class, 'show']);
-    Route::post('/orders/{id}', [OrderController::class, 'update']);
     Route::delete('/orders/{id}', [OrderController::class, 'destroy']);
 
 
