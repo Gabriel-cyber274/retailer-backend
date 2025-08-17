@@ -3,6 +3,7 @@
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DepositController;
+use App\Http\Controllers\FaqController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductFeatureImagesController;
@@ -30,6 +31,8 @@ Route::post('/customers', [CustomerController::class, 'store']);
 Route::post('/orders/{id}', [OrderController::class, 'update']);
 
 
+Route::get('/faqs', [FaqController::class, 'index']);
+Route::get('/faqs/active', [FaqController::class, 'active']);
 
 
 Route::post('/register', [UserController::class, 'Register']);

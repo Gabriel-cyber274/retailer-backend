@@ -607,11 +607,12 @@
             originalProducts.forEach(product => {
                 // Check if any of the product fields match the search term
                 const isMatch = (
-                    (product.name && product.name.includes(searchStr)) ||
-                    (product.description && product.description.includes(searchStr)) ||
-                    (product.brand && product.brand.includes(searchStr)) ||
-                    (product.product_code && product.product_code.includes(searchStr)) ||
-                    (product.categories && product.categories.some(category => category.includes(searchStr))) ||
+                    (product.name && product.name.toLowerCase().includes(searchStr)) ||
+                    (product.description && product.description.toLowerCase().includes(searchStr)) ||
+                    (product.brand && product.brand.toLowerCase().includes(searchStr)) ||
+                    (product.product_code && product.product_code.toLowerCase().includes(searchStr)) ||
+                    (product.categories && product.categories.some(category => category.toLowerCase().includes(
+                        searchStr))) ||
                     (product.tags && product.tags.some(tag => tag.name.toLowerCase().includes(searchStr)))
                 );
 
@@ -840,22 +841,22 @@
     <label class="fw-medium mb-2">Select Tag:</label>
     <div class="d-flex flex-wrap gap-3" id="tag-selection">
         ${retail.tags.map(tag => `
-                                                                                                                    <div class="form-check">
-                                                                                                                        <input class="form-check-input" type="radio" name="productTag" 
-                                                                                                                               id="tag-${tag.id}" value="${tag.id}">
-                                                                                                                        <label class="form-check-label  align-items-center gap-2" for="tag-${tag.id}">
-                                                                                                                            ${tag.tag_image ? `
+                                                                                                                                            <div class="form-check">
+                                                                                                                                                <input class="form-check-input" type="radio" name="productTag" 
+                                                                                                                                                       id="tag-${tag.id}" value="${tag.id}">
+                                                                                                                                                <label class="form-check-label  align-items-center gap-2" for="tag-${tag.id}">
+                                                                                                                                                    ${tag.tag_image ? `
                         <div class="tag-image-container">
                             <img src="${tag.tag_image}" alt="${tag.name}" 
                                  class=" border" 
                                  style="width: 28px; height: 28px; object-fit: cover;">
                         </div>
                     ` : ''}
-                                                                                                                            <span>${tag.name}</span><br>
-                                                                                                                            <small class="text-muted">${tag.description}</small>
-                                                                                                                        </label>
-                                                                                                                    </div>
-                                                                                                                `).join('')}
+                                                                                                                                                    <span>${tag.name}</span><br>
+                                                                                                                                                    <small class="text-muted">${tag.description}</small>
+                                                                                                                                                </label>
+                                                                                                                                            </div>
+                                                                                                                                        `).join('')}
     </div>
 </div>
         `;
@@ -876,11 +877,11 @@
                         <span class="fs-4 fw-bold text-primary">₦${finalPrice.toLocaleString()}</span>
                     </div>
                     ${retail.product.brand_name ? `
-                                                                                                                                                <div class="d-flex justify-content-between mb-3">
-                                                                                                                                                    <span class="fw-medium">Brand:</span>
-                                                                                                                                                    <span>${retail.product.brand_name}</span>
-                                                                                                                                                </div>
-                                                                                                                                            ` : ''}
+                                                                                                                                                                        <div class="d-flex justify-content-between mb-3">
+                                                                                                                                                                            <span class="fw-medium">Brand:</span>
+                                                                                                                                                                            <span>${retail.product.brand_name}</span>
+                                                                                                                                                                        </div>
+                                                                                                                                                                    ` : ''}
                     <div class="d-flex justify-content-between mb-3">
                         <span class="fw-medium">Product Code:</span>
                         <span>${retail.product.product_code || 'N/A'}</span>
@@ -895,14 +896,14 @@
                 </div>
                 
                 ${retail.product.in_stock ? `
-                                                                                                                                            <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
-                                                                                                                                                <i class="fas fa-cart-plus me-2"></i> Add to Cart
-                                                                                                                                            </button>
-                                                                                                                                        ` : `
-                                                                                                                                            <button disabled class="btn btn-secondary btn-lg w-100">
-                                                                                                                                                <i class="fas fa-ban me-2"></i> Out of Stock
-                                                                                                                                            </button>
-                                                                                                                                        `}
+                                                                                                                                                                    <button onclick="addToCartFromModal()" class="btn btn-primary btn-lg w-100">
+                                                                                                                                                                        <i class="fas fa-cart-plus me-2"></i> Add to Cart
+                                                                                                                                                                    </button>
+                                                                                                                                                                ` : `
+                                                                                                                                                                    <button disabled class="btn btn-secondary btn-lg w-100">
+                                                                                                                                                                        <i class="fas fa-ban me-2"></i> Out of Stock
+                                                                                                                                                                    </button>
+                                                                                                                                                                `}
             </div>
         </div>
     `;

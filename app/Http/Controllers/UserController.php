@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\VerificationCodeMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -105,12 +106,7 @@ class UserController extends Controller
         ]);
 
 
-        // Mail::send([], [], function ($message) use ($user, $verificationCode) {
-        //     $message->to($user->email)
-        //         ->subject('Your Verification Code (Subscurb)')
-        //         ->html('<h1>Your Verification Code</h1><p>Your verification code is: ' . $verificationCode . '</p>');
-        // });
-
+        Mail::to($user->email)->send(new VerificationCodeMail($verificationCode, $user));
 
         $response = [
             'data' => $user,
@@ -148,11 +144,7 @@ class UserController extends Controller
 
 
 
-            // Mail::send([], [], function ($message) use ($user, $verificationCode) {
-            //     $message->to($user->email)
-            //         ->subject('Your Verification Code (Subscurb)')
-            //         ->html('<h1>Your Verification Code</h1><p>Your verification code is: ' . $verificationCode . '</p>');
-            // });
+            Mail::to($user->email)->send(new VerificationCodeMail($verificationCode, $user));
 
 
             $response = [
@@ -201,7 +193,6 @@ class UserController extends Controller
             }
 
 
-            // if ($user->verification_code == $request->code) {
             if (
                 $user->verification_code == $request->code &&
                 $user->verification_expires_at &&
@@ -278,11 +269,9 @@ class UserController extends Controller
                     'verification_expires_at' => now()->addMinutes(10),
                 ]);
 
-                // Mail::send([], [], function ($message) use ($user, $verificationCode) {
-                //     $message->to($user->email)
-                //         ->subject('Your Reset Code (Subscurb)')
-                //         ->html('<h1>Your Reset Code</h1><p>Your Reset code is: ' . $verificationCode . '</p>');
-                // });
+
+                Mail::to($user->email)->send(new VerificationCodeMail($verificationCode, $user));
+
 
 
                 $response = [
@@ -337,11 +326,7 @@ class UserController extends Controller
             ]);
 
 
-            // Mail::send([], [], function ($message) use ($user, $verificationCode) {
-            //     $message->to($user->email)
-            //         ->subject('Your Reset Code (Subscurb)')
-            //         ->html('<h1>Your Reset Code</h1><p>Your Reset code is: ' . $verificationCode . '</p>');
-            // });
+            Mail::to($user->email)->send(new VerificationCodeMail($verificationCode, $user));
 
 
             $response = [

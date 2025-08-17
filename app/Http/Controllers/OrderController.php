@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\DispatchNumberUpdatedMail;
+use App\Mail\OrderCompletedMail;
 use App\Mail\OrderCreatedMail;
 use App\Models\Deposit;
 use App\Models\Order;
@@ -486,12 +488,70 @@ class OrderController extends Controller
         }
     }
 
+    // public function update(Request $request, $id)
+    // {
+    //     DB::beginTransaction();
+
+    //     try {
+    //         $order = Order::with(['resells', 'products'])->findOrFail($id);
+    //         $user = User::findOrFail($order->user_id);
+
+    //         if (!is_null($request->status)) {
+    //             if ($order->resells->isNotEmpty()) {
+    //                 $order->update(['status' => 'completed']);
+
+    //                 $creditAmount = 0;
+
+    //                 foreach ($order->resells as $retail) {
+    //                     $creditAmount += $retail->gain * $retail->pivot->quantity;
+    //                 }
+
+    //                 $user->increment('acc_balance', $creditAmount);
+
+    //                 Deposit::create([
+    //                     'user_id' => $order->user_id,
+    //                     'amount' => $creditAmount,
+    //                     'customer_id' => $order->customer_id,
+    //                     'status' => 'completed',
+    //                     'order_id' => $order->id,
+    //                     'payment_method' => 'retail_deposit'
+    //                 ]);
+    //             } else {
+    //                 $order->update(['status' => 'completed']);
+    //             }
+    //         } else if (!is_null($request->dispatch_number)) {
+    //             $order->update(['dispatch_number' => $request->dispatch_number]);
+    //         } else {
+    //             return response([
+    //                 'message' => 'No update parameters provided',
+    //                 'success' => false,
+    //             ], 400);
+    //         }
+
+    //         DB::commit();
+
+    //         return response([
+    //             'order' => $order,
+    //             'message' => 'Order updated successfully',
+    //             'success' => true,
+    //         ], 200);
+    //     } catch (\Throwable $th) {
+    //         DB::rollBack();
+
+    //         return response([
+    //             'message' => 'Failed to update order: ' . $th->getMessage(),
+    //             'success' => false,
+    //         ], 500);
+    //     }
+    // }
+
+
     public function update(Request $request, $id)
     {
         DB::beginTransaction();
 
         try {
-            $order = Order::with(['resells', 'products'])->findOrFail($id);
+            $order = Order::with(['resells', 'products', 'customer', 'user'])->findOrFail($id);
             $user = User::findOrFail($order->user_id);
 
             if (!is_null($request->status)) {
@@ -517,8 +577,40 @@ class OrderController extends Controller
                 } else {
                     $order->update(['status' => 'completed']);
                 }
+
+                // Send order completed emails
+                if ($order->user && !empty($order->user->email) && $order->type != 'customer_purchase') {
+                    Mail::to($order->user->email)->queue(new OrderCompletedMail($order, 'user'));
+                }
+
+                if ($order->type === 'customer_purchase' && $order->customer && !empty($order->customer->email)) {
+                    Mail::to($order->customer->email)->queue(new OrderCompletedMail($order, 'customer'));
+
+                    if ($order->user && !empty($order->user->email)) {
+                        Mail::to($order->user->email)->queue(new OrderCompletedMail($order, 'customer_user'));
+                    }
+                }
+
+                // Always send to admin
+                Mail::to('gabrielimoh30@gmail.com')->queue(new OrderCompletedMail($order, 'admin'));
             } else if (!is_null($request->dispatch_number)) {
                 $order->update(['dispatch_number' => $request->dispatch_number]);
+
+                // Send dispatch number updated emails
+                if ($order->user && !empty($order->user->email) && $order->type != 'customer_purchase') {
+                    Mail::to($order->user->email)->queue(new DispatchNumberUpdatedMail($order, 'user'));
+                }
+
+                if ($order->type === 'customer_purchase' && $order->customer && !empty($order->customer->email)) {
+                    Mail::to($order->customer->email)->queue(new DispatchNumberUpdatedMail($order, 'customer'));
+
+                    if ($order->user && !empty($order->user->email)) {
+                        Mail::to($order->user->email)->queue(new DispatchNumberUpdatedMail($order, 'customer_user'));
+                    }
+                }
+
+                // Always send to admin
+                Mail::to('gabrielimoh30@gmail.com')->queue(new DispatchNumberUpdatedMail($order, 'admin'));
             } else {
                 return response([
                     'message' => 'No update parameters provided',
@@ -542,7 +634,6 @@ class OrderController extends Controller
             ], 500);
         }
     }
-
 
     /**
      * Remove the specified resource from storage.

@@ -114,6 +114,12 @@
     <p style="margin-top:16px;">
         @if ($recipientType === 'admin')
             Please review and process this order in the dashboard.<br><br>
+            <h6>
+                <a href="{{ route('filament.admin.resources.orders.view', $order->id) }}" target="_blank"
+                    rel="noopener noreferrer">
+                    View Order
+                </a>
+            </h6>
             Regards,<br>{{ config('app.name') }} Team
         @elseif($recipientType === 'customer')
             We’ll notify you once your order is dispatched.<br><br>

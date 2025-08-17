@@ -138,7 +138,7 @@ class ProductResource extends Resource
                             ->numeric()
                             ->prefix('₦')
                             ->readOnly()
-                            ->dehydrated(false),
+                            ->dehydrated(),
                         Forms\Components\TextInput::make('quantity')->numeric(),
                         Forms\Components\Toggle::make('in_stock')->required()->default(true),
                     ])->columns(2),

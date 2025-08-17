@@ -19,21 +19,30 @@ if (!function_exists('uploadToCloud')) {
 if (!function_exists('deleteCloud')) {
     function deleteCloud($imageUrl)
     {
-        $parsedUrl = parse_url($imageUrl);
-        $path = $parsedUrl['path'] ?? '';
+        try {
+            $parsedUrl = parse_url($imageUrl);
+            $path = $parsedUrl['path'] ?? '';
 
-        $pathParts = explode('/', $path);
-        $filenameWithExt = end($pathParts);
+            $pathParts = explode('/', $path);
+            $filenameWithExt = end($pathParts);
 
-        // Remove the extension
-        $publicId = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+            // Remove the extension
+            $publicId = pathinfo($filenameWithExt, PATHINFO_FILENAME);
 
-        // Delete from Cloudinary
-        $result = Cloudinary::uploadApi()->destroy($publicId);
+            if (preg_match('/\/v\d+\/(.+)\.\w+$/', $path, $matches)) {
+                $publicId = $matches[1];
+            }
 
-        // Log or return response if needed
-        Log::info('Cloudinary delete result: ' . json_encode($result));
+            // Delete from Cloudinary
+            $result = Cloudinary::uploadApi()->destroy($publicId);
 
-        return $result;
+            // Log the result
+            Log::info('Cloudinary delete result: ' . json_encode($result));
+
+            return $result;
+        } catch (\Exception $e) {
+            Log::error('Failed to delete from Cloudinary: ' . $e->getMessage());
+            return false;
+        }
     }
 }

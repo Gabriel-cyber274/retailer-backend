@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             // DepositSeeder::class,
             CategoryRetailProductSeeder::class,
             StateSeeder::class,
+            FaqSeeder::class,
         ]);
     }
 }
