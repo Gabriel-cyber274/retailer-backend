@@ -26,10 +26,10 @@ class DatabaseSeeder extends Seeder
             ProductTagSeeder::class,
             CategorySeeder::class,
             CategoryProductSeeder::class,
-            RetailProductSeeder::class,
-            CustomerSeeder::class,
+            // RetailProductSeeder::class,
+            // CustomerSeeder::class,
             // DepositSeeder::class,
-            CategoryRetailProductSeeder::class,
+            // CategoryRetailProductSeeder::class,
             StateSeeder::class,
             FaqSeeder::class,
         ]);
