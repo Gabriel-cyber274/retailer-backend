@@ -18,6 +18,7 @@ class UserCart extends Model
         'user_id' => 'integer',
         'product_id' => 'integer',
         'tag_id' => 'integer',
+        'quantity' => 'integer',
     ];
 
     public function user()
