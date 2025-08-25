@@ -14,6 +14,11 @@ class UserCart extends Model
         'status'
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+        'product_id' => 'integer',
+        'tag_id' => 'integer',
+    ];
 
     public function user()
     {

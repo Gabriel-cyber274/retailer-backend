@@ -16,6 +16,11 @@ class retailProduct extends Model
         'user_id',
     ];
 
+    protected $casts = [
+        'product_id' => 'integer',
+        'user_id'   => 'integer',
+    ];
+
     public function orders()
     {
         return $this->belongsToMany(Order::class, 'order_retail_product', 'order_id', 'retail_id')->withPivot('quantity');

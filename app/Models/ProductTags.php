@@ -17,6 +17,10 @@ class ProductTags extends Model
         'tag_code',
     ];
 
+    protected $casts = [
+        'product_id' => 'integer',
+    ];
+
 
     public function product()
     {

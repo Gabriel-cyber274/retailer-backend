@@ -14,6 +14,10 @@ class ProductFeatureImages extends Model
         'image'
     ];
 
+    protected $casts = [
+        'product_id' => 'integer',
+    ];
+
 
     public function product()
     {

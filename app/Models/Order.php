@@ -28,6 +28,18 @@ class Order extends Model
         'note'
     ];
 
+    protected $casts = [
+        'user_id'        => 'integer',
+        'customer_id'    => 'integer',
+        'state_id'       => 'integer',
+        'status'         => 'string',
+        'type'           => 'string',
+        'reference'      => 'string',
+        'payment_method' => 'string',
+        'dispatch_number' => 'string',
+        'note'           => 'string',
+    ];
+
     public function state()
     {
         return $this->belongsTo(State::class);

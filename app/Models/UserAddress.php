@@ -14,6 +14,10 @@ class UserAddress extends Model
         'is_default',
     ];
 
+    protected $casts = [
+        'state_id' => 'integer',
+    ];
+
     protected function casts(): array
     {
         return [

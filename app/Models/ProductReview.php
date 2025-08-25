@@ -13,6 +13,11 @@ class ProductReview extends Model
         'comment'
     ];
 
+    protected $casts = [
+        'product_id' => 'integer',
+        'user_id' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);

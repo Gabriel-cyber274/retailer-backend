@@ -19,6 +19,10 @@ class Withdrawal extends Model
         'account_name',
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
